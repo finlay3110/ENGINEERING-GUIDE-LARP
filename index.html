@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UCN Engineering Reference Tool</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ HEADER ============ -->
+  <header class="hdr">
+    <div class="hdr-brand">
+      <div class="brand-ring">
+        <img src="assets/ucn-logo-white.png" alt="UCN logo" class="brand-ring-img">
+      </div>
+      <div class="hdr-titles">
+        <p class="eyebrow">United Confederation Navy</p>
+        <h1>Engineering Reference Tool</h1>
+      </div>
+    </div>
+    <a class="pill-btn" href="https://toolportal.netlify.app">&larr; Back to Tool Portal</a>
+  </header>
+
+  <!-- ============ TABS ============ -->
+  <nav class="tabs" role="tablist" aria-label="Reference sections">
+    <button class="tab-btn active" data-tab="power" role="tab" aria-selected="true">Power Management</button>
+    <button class="tab-btn" data-tab="thermal" role="tab" aria-selected="false">Thermal &amp; Power Guide</button>
+    <button class="tab-btn" data-tab="warp" role="tab" aria-selected="false">Warp Guide</button>
+    <button class="tab-btn" data-tab="damage" role="tab" aria-selected="false">Damage Control</button>
+  </nav>
+
+  <main class="panels">
+
+    <!-- ======== TAB 1: POWER MANAGEMENT ======== -->
+    <section class="panel active" id="panel-power">
+      <h2>System Effectiveness</h2>
+      <p class="panel-sub">How additional power allocation affects each system's performance. Power levels are not capped at 100% &mdash; systems can be overdriven well beyond it, at a coolant cost (see the Thermal &amp; Power Guide).</p>
+
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>System</th><th>Effect of Power Increase</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="sys">Reactor</td><td>Power generation increases effectiveness, with diminishing returns.</td></tr>
+            <tr><td class="sys">Beams</td><td>Rate of fire scales linearly.</td></tr>
+            <tr><td class="sys">Missiles</td><td>Reload speed scales linearly.</td></tr>
+            <tr><td class="sys">Manoeuvring</td><td>Rotation speed scales linearly.</td></tr>
+            <tr><td class="sys">Impulse</td><td>Forward/backward speed scales linearly.</td></tr>
+            <tr><td class="sys">Warp</td><td>Linear for power drain; non-linear in practical use.</td></tr>
+            <tr><td class="sys">Shield Generator</td><td>Recharge speed scales linearly; defensive return is non-linear.</td></tr>
+            <tr><td class="sys">Scanner</td><td>Scanner range and alignment time scale linearly; increased power dramatically increases drone range.</td></tr>
+            <tr><td class="sys">Cargo Docks</td><td>Inter-dock transfer speed and tractor beam movement scale linearly.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ======== TAB 2: THERMAL & POWER GUIDE ======== -->
+    <section class="panel" id="panel-thermal">
+      <h2>Coolant Guide</h2>
+      <p class="panel-sub">Coolant required at a given power level. Power levels can exceed 100% &mdash; anything past 230% is unsustainable.</p>
+
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Power Level</th><th>Coolant Required</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>100%</td><td>0%</td></tr>
+            <tr><td>150%</td><td>30%</td></tr>
+            <tr><td>200%</td><td>70%</td></tr>
+            <tr><td>230%</td><td>100%</td></tr>
+            <tr class="danger-row"><td>&gt;230%</td><td>DANGER ZONE &mdash; UNSUSTAINABLE</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="mt">Cooling Behaviour</h2>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Power Level</th><th>Behaviour</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>&lt;100%</td><td>System cools naturally.</td></tr>
+            <tr><td>150%</td><td>Stable with modest coolant.</td></tr>
+            <tr><td>200%</td><td>Requires significant coolant.</td></tr>
+            <tr class="danger-row"><td>&gt;230%</td><td>Overheating unavoidable.</td></tr>
+            <tr class="danger-row"><td>300%</td><td>Rapid overheating.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ======== TAB 3: WARP GUIDE ======== -->
+    <section class="panel" id="panel-warp">
+      <h2>Warp Travel Setups</h2>
+      <p class="panel-sub">Enter a distance to see the recommended warp setup. If your distance falls between two tabled entries, both bracketing rows are shown. Leave blank to see the all-distance (&infin;) setup.</p>
+
+      <div class="warp-input-row">
+        <label for="sectorInput">Sectors to travel</label>
+        <input type="number" id="sectorInput" min="1" placeholder="e.g. 6">
+        <button type="button" id="sectorClear" class="ghost-btn">Reset to &infin;</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="ref-table warp-table">
+          <thead>
+            <tr>
+              <th>Distance</th><th>Warp Level</th><th>Warp Power</th><th>Warp Coolant</th>
+              <th>Reactor Power</th><th>Reactor Coolant</th><th>Top Speed</th><th>Travel Time</th>
+            </tr>
+          </thead>
+          <tbody id="warpTableBody"></tbody>
+        </table>
+      </div>
+      <p class="hint" id="warpNote"></p>
+    </section>
+
+    <!-- ======== TAB 4: DAMAGE CONTROL ======== -->
+    <section class="panel" id="panel-damage">
+      <h2>Manual Repair Locations</h2>
+      <div class="dc-controls">
+        <label for="shipSelect">Ship</label>
+        <select id="shipSelect">
+          <option value="havock">UCS Havock</option>
+          <option value="takanami">UCS Takanami</option>
+        </select>
+        <button type="button" id="viewMapBtn" class="pill-btn">View ship map (PDF)</button>
+      </div>
+
+      <div class="dc-groups" id="dcGroups"></div>
+    </section>
+
+  </main>
+
+  <p class="credit">Designed by Lt Fin "Tetra"</p>
+  <p class="disclaimer">This is a fan-made project and is not approved by or affiliated with Bridge Command / The London Space Elevator Limited. All figures are community reference data and are subject to change.</p>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
