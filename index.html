@@ -44,15 +44,15 @@
             <tr><th>System</th><th>Effect of Power Increase</th></tr>
           </thead>
           <tbody>
-            <tr><td class="sys">Reactor</td><td>Power generation increases effectiveness, with diminishing returns.</td></tr>
-            <tr><td class="sys">Beams</td><td>Rate of fire scales linearly.</td></tr>
-            <tr><td class="sys">Missiles</td><td>Reload speed scales linearly.</td></tr>
-            <tr><td class="sys">Manoeuvring</td><td>Rotation speed scales linearly.</td></tr>
-            <tr><td class="sys">Impulse</td><td>Forward/backward speed scales linearly.</td></tr>
-            <tr><td class="sys">Warp</td><td>Linear for power drain; non-linear in practical use.</td></tr>
-            <tr><td class="sys">Shield Generator</td><td>Recharge speed scales linearly; defensive return is non-linear.</td></tr>
-            <tr><td class="sys">Scanner</td><td>Scanner range and alignment time scale linearly; increased power dramatically increases drone range.</td></tr>
-            <tr><td class="sys">Cargo Docks</td><td>Inter-dock transfer speed and tractor beam movement scale linearly.</td></tr>
+            <tr><td class="sys" data-label="System">Reactor</td><td data-label="Effect of Power Increase">Power generation increases effectiveness, with diminishing returns.</td></tr>
+            <tr><td class="sys" data-label="System">Beams</td><td data-label="Effect of Power Increase">Rate of fire scales linearly.</td></tr>
+            <tr><td class="sys" data-label="System">Missiles</td><td data-label="Effect of Power Increase">Reload speed scales linearly.</td></tr>
+            <tr><td class="sys" data-label="System">Manoeuvring</td><td data-label="Effect of Power Increase">Rotation speed scales linearly.</td></tr>
+            <tr><td class="sys" data-label="System">Impulse</td><td data-label="Effect of Power Increase">Forward/backward speed scales linearly.</td></tr>
+            <tr><td class="sys" data-label="System">Warp</td><td data-label="Effect of Power Increase">Linear for power drain; non-linear in practical use.</td></tr>
+            <tr><td class="sys" data-label="System">Shield Generator</td><td data-label="Effect of Power Increase">Recharge speed scales linearly; defensive return is non-linear.</td></tr>
+            <tr><td class="sys" data-label="System">Scanner</td><td data-label="Effect of Power Increase">Scanner range and alignment time scale linearly; increased power dramatically increases drone range.</td></tr>
+            <tr><td class="sys" data-label="System">Cargo Docks</td><td data-label="Effect of Power Increase">Inter-dock transfer speed and tractor beam movement scale linearly.</td></tr>
           </tbody>
         </table>
       </div>
@@ -69,11 +69,11 @@
             <tr><th>Power Level</th><th>Coolant Required</th></tr>
           </thead>
           <tbody>
-            <tr><td>100%</td><td>0%</td></tr>
-            <tr><td>150%</td><td>30%</td></tr>
-            <tr><td>200%</td><td>70%</td></tr>
-            <tr><td>230%</td><td>100%</td></tr>
-            <tr class="danger-row"><td>&gt;230%</td><td>DANGER ZONE &mdash; UNSUSTAINABLE</td></tr>
+            <tr><td data-label="Power Level">100%</td><td data-label="Coolant Required">0%</td></tr>
+            <tr><td data-label="Power Level">150%</td><td data-label="Coolant Required">30%</td></tr>
+            <tr><td data-label="Power Level">200%</td><td data-label="Coolant Required">70%</td></tr>
+            <tr><td data-label="Power Level">230%</td><td data-label="Coolant Required">100%</td></tr>
+            <tr class="danger-row"><td data-label="Power Level">&gt;230%</td><td data-label="Coolant Required">DANGER ZONE &mdash; UNSUSTAINABLE</td></tr>
           </tbody>
         </table>
       </div>
@@ -85,11 +85,11 @@
             <tr><th>Power Level</th><th>Behaviour</th></tr>
           </thead>
           <tbody>
-            <tr><td>&lt;100%</td><td>System cools naturally.</td></tr>
-            <tr><td>150%</td><td>Stable with modest coolant.</td></tr>
-            <tr><td>200%</td><td>Requires significant coolant.</td></tr>
-            <tr class="danger-row"><td>&gt;230%</td><td>Overheating unavoidable.</td></tr>
-            <tr class="danger-row"><td>300%</td><td>Rapid overheating.</td></tr>
+            <tr><td data-label="Power Level">&lt;100%</td><td data-label="Behaviour">System cools naturally.</td></tr>
+            <tr><td data-label="Power Level">150%</td><td data-label="Behaviour">Stable with modest coolant.</td></tr>
+            <tr><td data-label="Power Level">200%</td><td data-label="Behaviour">Requires significant coolant.</td></tr>
+            <tr class="danger-row"><td data-label="Power Level">&gt;230%</td><td data-label="Behaviour">Overheating unavoidable.</td></tr>
+            <tr class="danger-row"><td data-label="Power Level">300%</td><td data-label="Behaviour">Rapid overheating.</td></tr>
           </tbody>
         </table>
       </div>
@@ -98,12 +98,28 @@
     <!-- ======== TAB 3: WARP GUIDE ======== -->
     <section class="panel" id="panel-warp">
       <h2>Warp Travel Setups</h2>
-      <p class="panel-sub">Enter a distance to see the recommended warp setup. If your distance falls between two tabled entries, both bracketing rows are shown. Leave blank to see the all-distance (&infin;) setup.</p>
+      <p class="panel-sub" id="warpIntro">Enter a distance to see the recommended warp setup. If your distance falls between two tabled entries, both bracketing rows are shown. Leave blank to see the all-distance (&infin;) setup.</p>
 
-      <div class="warp-input-row">
+      <div class="warp-mode-tabs">
+        <button type="button" class="mode-btn active" data-mode="distance">By Distance</button>
+        <button type="button" class="mode-btn" data-mode="level">By Warp Level</button>
+        <button type="button" class="mode-btn" data-mode="all">Show All</button>
+      </div>
+
+      <div class="warp-controls" id="distanceControls">
         <label for="sectorInput">Sectors to travel</label>
         <input type="number" id="sectorInput" min="1" placeholder="e.g. 6">
         <button type="button" id="sectorClear" class="ghost-btn">Reset to &infin;</button>
+      </div>
+
+      <div class="warp-controls" id="levelControls" style="display:none;">
+        <label>Warp level</label>
+        <div class="seg-btns" id="warpLevelBtns">
+          <button type="button" data-level="1">Warp 1</button>
+          <button type="button" data-level="2">Warp 2</button>
+          <button type="button" data-level="3">Warp 3</button>
+          <button type="button" data-level="4">Warp 4</button>
+        </div>
       </div>
 
       <div class="table-wrap">

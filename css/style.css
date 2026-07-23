@@ -219,19 +219,40 @@ html,body{
 }
 
 /* ---------- warp guide ---------- */
-.warp-input-row{
+.warp-mode-tabs{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:16px;
+}
+.mode-btn{
+  border:1.4px solid var(--line);
+  background:transparent;
+  color:var(--muted);
+  font-family:'Exo 2',sans-serif;
+  font-weight:700;
+  font-size:12.5px;
+  letter-spacing:.02em;
+  padding:9px 15px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.mode-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+.mode-btn.active{background:var(--cyan); border-color:var(--cyan); color:var(--page-bg);}
+
+.warp-controls{
   display:flex;
   align-items:center;
   gap:12px;
   flex-wrap:wrap;
   margin-bottom:18px;
 }
-.warp-input-row label{
+.warp-controls label{
   font-size:12.5px;
   color:var(--muted);
   font-weight:700;
 }
-.warp-input-row input{
+.warp-controls input{
   width:120px;
   padding:9px 12px;
   border-radius:7px;
@@ -242,7 +263,28 @@ html,body{
   font-size:13px;
   outline:none;
 }
-.warp-input-row input:focus{border-color:var(--cyan);}
+.warp-controls input:focus{border-color:var(--cyan);}
+
+.seg-btns{
+  display:flex;
+  border:1.4px solid var(--navy);
+  border-radius:8px;
+  overflow:hidden;
+}
+.seg-btns button{
+  border:none;
+  background:var(--input-fill);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  font-weight:700;
+  font-size:12.5px;
+  padding:9px 16px;
+  cursor:pointer;
+}
+.seg-btns button:not(:last-child){border-right:1.4px solid var(--navy);}
+.seg-btns button:hover{color:var(--cyan);}
+.seg-btns button.active{background:var(--cyan); color:var(--page-bg);}
+
 .hint{font-size:12px; color:var(--muted); margin-top:12px; line-height:1.5;}
 
 /* ---------- damage control ---------- */
@@ -325,4 +367,56 @@ html,body{
   .hdr{flex-direction:column; align-items:flex-start;}
   .panels{padding:20px 16px 24px;}
   .hdr-titles h1{font-size:17px;}
+}
+
+/* Stack tables into label/value cards below 700px - wide multi-column
+   tables (especially the 8-column warp table) are unreadable in a
+   horizontally-scrolled state on a phone. */
+@media (max-width:700px){
+  .table-wrap{
+    overflow-x:visible;
+    border:none;
+    border-radius:0;
+  }
+  .ref-table{
+    min-width:0;
+    display:block;
+  }
+  .ref-table thead{display:none;}
+  .ref-table tbody{display:block;}
+  .ref-table tr{
+    display:block;
+    background:var(--input-fill);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:4px 14px;
+    margin-bottom:10px;
+  }
+  .ref-table tbody tr:nth-child(even){background:var(--input-fill);}
+  .ref-table td{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:14px;
+    text-align:right;
+    padding:9px 0;
+    border-top:1px solid var(--line);
+  }
+  .ref-table td:first-child{border-top:none;}
+  .ref-table td::before{
+    content:attr(data-label);
+    flex:none;
+    text-align:left;
+    font-size:10.5px;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .ref-table td.sys{white-space:normal;}
+  .ref-table tr.danger-row,
+  .ref-table tr.bracket-highlight,
+  .ref-table tr.exact-highlight{
+    border-color:var(--cyan);
+  }
 }

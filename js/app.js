@@ -32,6 +32,20 @@ const warpBody = document.getElementById('warpTableBody');
 const sectorInput = document.getElementById('sectorInput');
 const sectorClear = document.getElementById('sectorClear');
 const warpNote = document.getElementById('warpNote');
+const warpIntro = document.getElementById('warpIntro');
+const modeBtns = document.querySelectorAll('.mode-btn');
+const distanceControls = document.getElementById('distanceControls');
+const levelControls = document.getElementById('levelControls');
+const warpLevelBtns = document.querySelectorAll('#warpLevelBtns button');
+
+let warpMode = 'distance'; // 'distance' | 'level' | 'all'
+let selectedLevel = null;  // '1' | '2' | '3' | '4'
+
+const MODE_INTROS = {
+  distance: 'Enter a distance to see the recommended warp setup. If your distance falls between two tabled entries, both bracketing rows are shown. Leave blank to see the all-distance (&infin;) setup.',
+  level: 'Pick a warp level to see every tabled distance that uses it.',
+  all: 'Every tabled distance and its recommended setup, in order.'
+};
 
 function distLabel(row){
   return row.distance === Infinity ? '&infin;' : row.distance + ' sectors';
@@ -39,22 +53,21 @@ function distLabel(row){
 
 function renderRow(row, cls){
   return `<tr class="${cls || ''}">
-    <td>${distLabel(row)}</td>
-    <td>${row.warpLevel}</td>
-    <td>${row.warpPower}</td>
-    <td>${row.warpCoolant}</td>
-    <td>${row.reactorPower}</td>
-    <td>${row.reactorCoolant}</td>
-    <td>${row.topSpeed}</td>
-    <td>${row.travelTime}</td>
+    <td data-label="Distance">${distLabel(row)}</td>
+    <td data-label="Warp Level">${row.warpLevel}</td>
+    <td data-label="Warp Power">${row.warpPower}</td>
+    <td data-label="Warp Coolant">${row.warpCoolant}</td>
+    <td data-label="Reactor Power">${row.reactorPower}</td>
+    <td data-label="Reactor Coolant">${row.reactorCoolant}</td>
+    <td data-label="Top Speed">${row.topSpeed}</td>
+    <td data-label="Travel Time">${row.travelTime}</td>
   </tr>`;
 }
 
-function renderWarpTable(){
+function renderByDistance(){
   const raw = sectorInput.value.trim();
 
   if(raw === ''){
-    // default: show the all-distance (infinite) fallback setup
     const infRow = WARP_TABLE[WARP_TABLE.length - 1];
     warpBody.innerHTML = renderRow(infRow, 'exact-highlight');
     warpNote.textContent = 'Showing the all-distance (\u221E) setup. Enter a sector count above for a distance-specific recommendation.';
@@ -91,7 +104,6 @@ function renderWarpTable(){
     return;
   }
 
-  // find the two bracketing rows
   let lower = tabled[0], upper = tabled[tabled.length - 1];
   for(let i = 0; i < tabled.length - 1; i++){
     if(tabled[i].distance <= n && tabled[i+1].distance >= n){
@@ -103,6 +115,55 @@ function renderWarpTable(){
   warpBody.innerHTML = renderRow(lower, 'bracket-highlight') + renderRow(upper, 'bracket-highlight');
   warpNote.textContent = `${n} sectors falls between ${lower.distance} and ${upper.distance} sectors \u2014 showing both bracketing setups.`;
 }
+
+function renderByLevel(){
+  if(!selectedLevel){
+    warpBody.innerHTML = '';
+    warpNote.textContent = 'Choose a warp level above.';
+    return;
+  }
+  const label = 'Warp ' + selectedLevel;
+  const matches = WARP_TABLE.filter(r => r.warpLevel === label);
+  if(matches.length === 0){
+    warpBody.innerHTML = '';
+    warpNote.textContent = `No tabled distances use ${label}.`;
+    return;
+  }
+  warpBody.innerHTML = matches.map(r => renderRow(r, 'bracket-highlight')).join('');
+  warpNote.textContent = `Showing all tabled distances that use ${label}.`;
+}
+
+function renderAll(){
+  warpBody.innerHTML = WARP_TABLE.map(r => renderRow(r)).join('');
+  warpNote.textContent = `Showing all ${WARP_TABLE.length} tabled setups.`;
+}
+
+function renderWarpTable(){
+  if(warpMode === 'distance') renderByDistance();
+  else if(warpMode === 'level') renderByLevel();
+  else renderAll();
+}
+
+modeBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    modeBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    warpMode = btn.dataset.mode;
+    warpIntro.innerHTML = MODE_INTROS[warpMode];
+    distanceControls.style.display = (warpMode === 'distance') ? 'flex' : 'none';
+    levelControls.style.display = (warpMode === 'level') ? 'flex' : 'none';
+    renderWarpTable();
+  });
+});
+
+warpLevelBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    warpLevelBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedLevel = btn.dataset.level;
+    renderWarpTable();
+  });
+});
 
 sectorInput.addEventListener('input', renderWarpTable);
 sectorClear.addEventListener('click', ()=>{ sectorInput.value=''; renderWarpTable(); });
