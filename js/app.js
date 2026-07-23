@@ -1,15 +1,19 @@
-// ============ TAB SWITCHING ============
-const tabBtns = document.querySelectorAll('.tab-btn');
+// ============ TAB SWITCHING (top bar + bottom mobile bar, kept in sync) ============
+const allTabBtns = document.querySelectorAll('.tab-btn, .bottom-tab-btn');
 const panels = document.querySelectorAll('.panel');
 
-tabBtns.forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    tabBtns.forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
-    panels.forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    btn.setAttribute('aria-selected','true');
-    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+function activateTab(name){
+  allTabBtns.forEach(b=>{
+    const isMatch = b.dataset.tab === name;
+    b.classList.toggle('active', isMatch);
+    b.setAttribute('aria-selected', isMatch ? 'true' : 'false');
   });
+  panels.forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+allTabBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=> activateTab(btn.dataset.tab));
 });
 
 // ============ WARP GUIDE DATA ============
