@@ -23,12 +23,32 @@
     <a class="pill-btn" href="https://toolportal.netlify.app">&larr; Back to Tool Portal</a>
   </header>
 
-  <!-- ============ TABS ============ -->
+  <!-- ============ TABS (desktop/tablet, top) ============ -->
   <nav class="tabs" role="tablist" aria-label="Reference sections">
     <button class="tab-btn active" data-tab="power" role="tab" aria-selected="true">Power Management</button>
     <button class="tab-btn" data-tab="thermal" role="tab" aria-selected="false">Thermal &amp; Power Guide</button>
     <button class="tab-btn" data-tab="warp" role="tab" aria-selected="false">Warp Guide</button>
     <button class="tab-btn" data-tab="damage" role="tab" aria-selected="false">Damage Control</button>
+  </nav>
+
+  <!-- ============ TABS (phone, fixed bottom bar) ============ -->
+  <nav class="bottom-tabs" role="tablist" aria-label="Reference sections">
+    <button class="bottom-tab-btn active" data-tab="power" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
+      <span>Power</span>
+    </button>
+    <button class="bottom-tab-btn" data-tab="thermal" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4a2 2 0 0 0-4 0v10.54a4 4 0 1 0 4 0V4z"/><path d="M12 15v-5"/></svg>
+      <span>Thermal</span>
+    </button>
+    <button class="bottom-tab-btn" data-tab="warp" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11l4.5-2.5z"/></svg>
+      <span>Warp</span>
+    </button>
+    <button class="bottom-tab-btn" data-tab="damage" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a6 6 0 0 1-8 8l-6.5 6.5a2.1 2.1 0 0 1-3-3L9.7 11a6 6 0 0 1 8-8l-3 3z"/></svg>
+      <span>Damage</span>
+    </button>
   </nav>
 
   <main class="panels">
