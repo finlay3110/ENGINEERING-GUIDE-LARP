@@ -53,12 +53,18 @@ The suite runs twice, once at desktop width and once at phone width, because
 the layout crosses a 700px breakpoint that swaps the tab bar and restructures
 every table.
 
-If your environment already has a Chromium that Playwright didn't download
-itself, point `CHROMIUM_PATH` at it to skip the version check:
+Two environment variables adjust how the suite runs:
 
 ```
-CHROMIUM_PATH=/path/to/chromium npm test
+CHROMIUM_PATH=/path/to/chromium npm test    # use an existing browser binary
+BASE_URL=https://example.netlify.app npm test   # test a deployed site
 ```
+
+`CHROMIUM_PATH` skips Playwright's browser-revision check, for environments
+that ship their own Chromium. `BASE_URL` runs the tests against a deployed
+URL — a Netlify deploy preview, for instance — instead of starting a local
+server, which is a way to check that what actually shipped behaves like the
+working tree.
 
 ## Data source
 

@@ -2,6 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = Number(process.env.PORT) || 8099;
 
+// Point BASE_URL at a deployed site (a Netlify deploy preview, say) to run the
+// suite against that instead of a local server. Unset, the tests spin up
+// scripts/serve.mjs and run against the working tree.
+const BASE_URL = process.env.BASE_URL;
+
 // Sandboxes and CI images sometimes ship a Chromium build that doesn't match
 // the revision this Playwright version expects. Point CHROMIUM_PATH at that
 // binary to use it instead of the downloaded one; unset, everything behaves
@@ -18,7 +23,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
 
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: BASE_URL || `http://localhost:${PORT}`,
     trace: 'on-first-retry',
     launchOptions,
   },
@@ -31,10 +36,12 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'], launchOptions } },
   ],
 
-  webServer: {
-    command: 'node scripts/serve.mjs',
-    url: `http://localhost:${PORT}/index.html`,
-    reuseExistingServer: !process.env.CI,
-    stdout: 'ignore',
-  },
+  webServer: BASE_URL
+    ? undefined
+    : {
+        command: 'node scripts/serve.mjs',
+        url: `http://localhost:${PORT}/index.html`,
+        reuseExistingServer: !process.env.CI,
+        stdout: 'ignore',
+      },
 });
