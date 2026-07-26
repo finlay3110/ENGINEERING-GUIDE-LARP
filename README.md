@@ -14,13 +14,57 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 ## File structure
 
 ```
-index.html              Main page (all four tabs)
+index.html               Main page (all four tabs)
 css/style.css            UCN dark navy theme
 js/app.js                Tab switching, warp calculator, damage control data
-fonts/                   Exo 2 + Orbitron (embedded via @font-face)
+fonts/                   Exo 2 + Orbitron (WOFF2, with TTF fallback)
 assets/                  UCN logo
 ship-maps/               HAVOCK_SHIP_MAP.pdf, Takanami_Ship_Map.pdf
+scripts/serve.mjs        Dependency-free static server for local preview
+tests/                   Playwright suite
+playwright.config.mjs    Test config (desktop + phone viewports)
 ```
+
+## Running it
+
+The site is plain static files with no build step and no runtime
+dependencies — opening `index.html` directly works for a quick look. Some
+things (font loading, the PDF links) behave more like production over HTTP:
+
+```
+npm run serve      # http://localhost:8099
+```
+
+## Tests
+
+The tests drive a real browser against the served site. They exist mainly to
+pin down the things that are easy to break by accident: WCAG contrast on the
+overheat warnings, the keyboard model behind the tab roles, and the warp
+calculator's edge cases.
+
+```
+npm install
+npx playwright install chromium
+npm test               # both viewport projects
+npm run test:headed    # watch it run
+```
+
+The suite runs twice, once at desktop width and once at phone width, because
+the layout crosses a 700px breakpoint that swaps the tab bar and restructures
+every table.
+
+Two environment variables adjust how the suite runs:
+
+```
+CHROMIUM_PATH=/path/to/chromium npm test    # use an existing browser binary
+BASE_URL=https://example.netlify.app npm test   # test a deployed site
+```
+
+`CHROMIUM_PATH` skips Playwright's browser-revision check, for environments
+that ship their own Chromium. `BASE_URL` runs the tests against a deployed
+URL — a Netlify deploy preview, for instance — instead of starting a local
+server, which is a way to check that what actually shipped behaves like the
+working tree.
 
 ## Data source
 
