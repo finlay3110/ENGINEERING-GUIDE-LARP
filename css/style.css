@@ -1,26 +1,34 @@
+/* WOFF2 first, TTF only as a fallback for browsers without WOFF2 support.
+   The set is ~492KB as TTF against ~158KB as WOFF2, and this page is loaded
+   on phone data at events, so nothing modern should be paying for the TTFs. */
 @font-face{
   font-family:'Exo 2';
-  src:url('../fonts/Exo2-Regular.ttf') format('truetype');
+  src:url('../fonts/Exo2-Regular.woff2') format('woff2'),
+      url('../fonts/Exo2-Regular.ttf') format('truetype');
   font-weight:400; font-style:normal; font-display:swap;
 }
 @font-face{
   font-family:'Exo 2';
-  src:url('../fonts/Exo2-Bold.ttf') format('truetype');
+  src:url('../fonts/Exo2-Bold.woff2') format('woff2'),
+      url('../fonts/Exo2-Bold.ttf') format('truetype');
   font-weight:700; font-style:normal; font-display:swap;
 }
 @font-face{
   font-family:'Exo 2';
-  src:url('../fonts/Exo2-Italic.ttf') format('truetype');
+  src:url('../fonts/Exo2-Italic.woff2') format('woff2'),
+      url('../fonts/Exo2-Italic.ttf') format('truetype');
   font-weight:400; font-style:italic; font-display:swap;
 }
 @font-face{
   font-family:'Orbitron';
-  src:url('../fonts/Orbitron-Bold.ttf') format('truetype');
+  src:url('../fonts/Orbitron-Bold.woff2') format('woff2'),
+      url('../fonts/Orbitron-Bold.ttf') format('truetype');
   font-weight:700; font-style:normal; font-display:swap;
 }
 @font-face{
   font-family:'Orbitron';
-  src:url('../fonts/Orbitron-SemiBold.ttf') format('truetype');
+  src:url('../fonts/Orbitron-SemiBold.woff2') format('woff2'),
+      url('../fonts/Orbitron-SemiBold.ttf') format('truetype');
   font-weight:600; font-style:normal; font-display:swap;
 }
 
