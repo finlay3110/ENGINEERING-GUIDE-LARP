@@ -32,7 +32,9 @@
   --input-fill:#1C2A46;
   --cyan:#4FA8C9;
   --orange:#DD7A2B;
-  --danger:#B23A3A;
+  /* Light enough to clear WCAG AA (4.5:1) on both the console and the
+     mobile card background - these are the overheat warnings. */
+  --danger:#EE7B7B;
   --amber:#E39A3E;
   --text:#EAF0FB;
   --muted:#8FA0BE;
@@ -247,7 +249,8 @@ html,body{
   flex-wrap:wrap;
   margin-bottom:18px;
 }
-.warp-controls label{
+.warp-controls label,
+.warp-controls .seg-label{
   font-size:12.5px;
   color:var(--muted);
   font-weight:700;
