@@ -7,6 +7,9 @@ function activateTab(name){
     const isMatch = b.dataset.tab === name;
     b.classList.toggle('active', isMatch);
     b.setAttribute('aria-selected', isMatch ? 'true' : 'false');
+    // Roving tabindex: only the selected tab in each bar is a tab stop, so
+    // Tab moves past the tablist and the arrow keys move within it.
+    b.tabIndex = isMatch ? 0 : -1;
   });
   panels.forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
@@ -14,6 +17,24 @@ function activateTab(name){
 
 allTabBtns.forEach(btn=>{
   btn.addEventListener('click', ()=> activateTab(btn.dataset.tab));
+
+  btn.addEventListener('keydown', e=>{
+    const KEYS = {ArrowRight:1, ArrowDown:1, ArrowLeft:-1, ArrowUp:-1};
+    const isEdge = e.key === 'Home' || e.key === 'End';
+    if(!(e.key in KEYS) && !isEdge) return;
+    e.preventDefault();
+
+    // Move within the bar the focused tab belongs to, so the visible bar
+    // (top on desktop, bottom on phone) is the one that gets focus.
+    const bar = [...btn.closest('[role="tablist"]').querySelectorAll('[role="tab"]')];
+    const from = bar.indexOf(btn);
+    const to = isEdge
+      ? (e.key === 'Home' ? 0 : bar.length - 1)
+      : (from + KEYS[e.key] + bar.length) % bar.length;
+
+    activateTab(bar[to].dataset.tab);
+    bar[to].focus();
+  });
 });
 
 // ============ WARP GUIDE DATA ============
@@ -29,7 +50,7 @@ const WARP_TABLE = [
   { distance:40, warpLevel:'Warp 2', warpPower:'145%', warpCoolant:'100%', reactorPower:'100%', reactorCoolant:'0%',  topSpeed:'2.90U/s', travelTime:'4m 40s' },
   { distance:45, warpLevel:'Warp 2', warpPower:'140%', warpCoolant:'100%', reactorPower:'100%', reactorCoolant:'0%',  topSpeed:'2.80U/s', travelTime:'5m 26s' },
   { distance:50, warpLevel:'Warp 2', warpPower:'140%', warpCoolant:'100%', reactorPower:'100%', reactorCoolant:'0%',  topSpeed:'2.80U/s', travelTime:'6m 02s' },
-  { distance:Infinity, warpLevel:'Warp 1', warpPower:'125%', warpCoolant:'55%', reactorPower:'170%', reactorCoolant:'45%', topSpeed:'1.25U/s', travelTime:'&mdash;' },
+  { distance:Infinity, warpLevel:'Warp 1', warpPower:'125%', warpCoolant:'55%', reactorPower:'170%', reactorCoolant:'45%', topSpeed:'1.25U/s', travelTime:'—' },
 ];
 
 const warpBody = document.getElementById('warpTableBody');
@@ -46,13 +67,13 @@ let warpMode = 'distance'; // 'distance' | 'level' | 'all'
 let selectedLevel = null;  // '1' | '2' | '3' | '4'
 
 const MODE_INTROS = {
-  distance: 'Enter a distance to see the recommended warp setup. If your distance falls between two tabled entries, both bracketing rows are shown. Leave blank to see the all-distance (&infin;) setup.',
+  distance: 'Enter a distance to see the recommended warp setup. If your distance falls between two tabled entries, both bracketing rows are shown. Leave blank to see the all-distance (∞) setup.',
   level: 'Pick a warp level to see every tabled distance that uses it.',
   all: 'Every tabled distance and its recommended setup, in order.'
 };
 
 function distLabel(row){
-  return row.distance === Infinity ? '&infin;' : row.distance + ' sectors';
+  return row.distance === Infinity ? '∞' : row.distance + ' sectors';
 }
 
 function renderRow(row, cls){
@@ -70,6 +91,17 @@ function renderRow(row, cls){
 
 function renderByDistance(){
   const raw = sectorInput.value.trim();
+
+  // A number input reports value === '' for input it holds but cannot parse
+  // ('-', '.', '1e', '1-2'), which is indistinguishable from an empty field
+  // unless badInput is checked. Without this, a half-typed number silently
+  // renders the infinity setup as though it were the answer.
+  // (Pure letters never get this far - the browser drops those keystrokes.)
+  if(sectorInput.validity && sectorInput.validity.badInput){
+    warpBody.innerHTML = '';
+    warpNote.textContent = 'That is not a number \u2014 enter a sector count, e.g. 6.';
+    return;
+  }
 
   if(raw === ''){
     const infRow = WARP_TABLE[WARP_TABLE.length - 1];
@@ -108,7 +140,9 @@ function renderByDistance(){
     return;
   }
 
-  let lower = tabled[0], upper = tabled[tabled.length - 1];
+  // n is inside the tabled range and not an exact match, so a bracketing
+  // pair is guaranteed to exist by this point.
+  let lower, upper;
   for(let i = 0; i < tabled.length - 1; i++){
     if(tabled[i].distance <= n && tabled[i+1].distance >= n){
       lower = tabled[i];
@@ -134,7 +168,18 @@ function renderByLevel(){
     return;
   }
   warpBody.innerHTML = matches.map(r => renderRow(r, 'bracket-highlight')).join('');
-  warpNote.textContent = `Showing all tabled distances that use ${label}.`;
+
+  // The infinity row is a distance-agnostic fallback rather than a tabled
+  // distance, so saying "all tabled distances" would contradict the row on
+  // screen - Warp 1 matches nothing but that fallback.
+  const tabledMatches = matches.filter(r => r.distance !== Infinity);
+  if(tabledMatches.length === 0){
+    warpNote.textContent = `${label} is only used by the all-distance (∞) setup — no specific tabled distance uses it.`;
+  } else if(matches.length > tabledMatches.length){
+    warpNote.textContent = `Showing all tabled distances that use ${label}, plus the all-distance (∞) setup.`;
+  } else {
+    warpNote.textContent = `Showing all tabled distances that use ${label}.`;
+  }
 }
 
 function renderAll(){
@@ -152,6 +197,7 @@ modeBtns.forEach(btn=>{
   btn.addEventListener('click', ()=>{
     modeBtns.forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
+    modeBtns.forEach(b=>b.setAttribute('aria-pressed', String(b === btn)));
     warpMode = btn.dataset.mode;
     warpIntro.innerHTML = MODE_INTROS[warpMode];
     distanceControls.style.display = (warpMode === 'distance') ? 'flex' : 'none';
@@ -162,8 +208,12 @@ modeBtns.forEach(btn=>{
 
 warpLevelBtns.forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    warpLevelBtns.forEach(b=>b.classList.remove('active'));
+    warpLevelBtns.forEach(b=>{
+      b.classList.remove('active');
+      b.setAttribute('aria-pressed', 'false');
+    });
     btn.classList.add('active');
+    btn.setAttribute('aria-pressed', 'true');
     selectedLevel = btn.dataset.level;
     renderWarpTable();
   });
@@ -171,6 +221,8 @@ warpLevelBtns.forEach(btn=>{
 
 sectorInput.addEventListener('input', renderWarpTable);
 sectorClear.addEventListener('click', ()=>{ sectorInput.value=''; renderWarpTable(); });
+
+warpIntro.innerHTML = MODE_INTROS[warpMode];
 renderWarpTable();
 
 // ============ DAMAGE CONTROL DATA ============
@@ -260,7 +312,7 @@ function renderShip(){
 
 viewMapBtn.addEventListener('click', ()=>{
   const ship = SHIP_DATA[shipSelect.value];
-  window.open(ship.map, '_blank');
+  window.open(ship.map, '_blank', 'noopener');
 });
 
 shipSelect.addEventListener('change', renderShip);
