@@ -13,9 +13,11 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 - **Action Log** — records manual repairs with a start and end time. Manual
   repair leads to OCP, crystals, conduits or reactor; OCP and crystals then
   list that ship's locations, and conduits are multi-select because they
-  usually drop in groups. Running totals per kind, and spare OCPs counting
-  down from five. Exports to PDF or JSON, with a handover prompt describing
-  the JSON to another app.
+  usually drop in groups. Separate one-tap buttons log a power crystal swap
+  and a hull integrity reading, both of which are moments rather than timed
+  repairs. Running totals per kind, spare OCPs counting down from five, and
+  the latest hull reading. Exports to PDF or JSON, with a handover prompt
+  describing the JSON to another app.
 
 - **Power Management** — how increasing power allocation affects each ship system (reactor, beams, missiles, manoeuvring, impulse, warp, shields, scanner, cargo docks).
 - **Thermal & Power Guide** — coolant required at a given power level, and expected cooling behaviour at each level. Power levels are not capped at 100%; the tool reflects overdrive up to and beyond 230%.
