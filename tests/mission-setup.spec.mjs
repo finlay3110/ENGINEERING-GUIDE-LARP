@@ -72,14 +72,21 @@ test.describe('module checkboxes', () => {
     expect(await availableTabs(page)).toEqual(['setup', 'log']);
   });
 
-  // Hiding the tab you are standing on would otherwise strand the page on a
-  // panel with no tab to return to.
+  // Hiding the tab you are standing on would strand the page on a panel with
+  // no tab pointing at it. The checkboxes live on the Setup panel, so this
+  // cannot happen by clicking today - the guard is defensive. Driving the
+  // change while another panel is open is the only way to actually exercise
+  // it, and stops a future caller of setModuleVisibility from regressing it.
   test('hiding the open tab falls back to setup', async ({ page }) => {
     await openTab(page, 'warp');
     await expect(page.locator('#panel-warp')).toBeVisible();
 
-    await openTab(page, 'setup');
-    await page.uncheck('#modPower');
+    await page.evaluate(() => {
+      const box = document.getElementById('modPower');
+      box.checked = false;
+      box.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
     await expect(page.locator('#panel-setup')).toBeVisible();
     await expect(page.locator('#panel-warp')).toBeHidden();
   });

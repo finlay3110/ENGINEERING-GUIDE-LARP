@@ -6,6 +6,17 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 
 ## Features
 
+- **Setup** — name, rank, date and time, mission name, mission type and ship,
+  plus a checkbox per section. Power Management shows the power, thermal and
+  warp tabs; Damage Control shows the damage tab and the repair buttons on the
+  log. Setup and the Action Log are always available.
+- **Action Log** — records manual repairs with a start and end time. Manual
+  repair leads to OCP, crystals, conduits or reactor; OCP and crystals then
+  list that ship's locations, and conduits are multi-select because they
+  usually drop in groups. Running totals per kind, and spare OCPs counting
+  down from five. Exports to PDF or JSON, with a handover prompt describing
+  the JSON to another app.
+
 - **Power Management** — how increasing power allocation affects each ship system (reactor, beams, missiles, manoeuvring, impulse, warp, shields, scanner, cargo docks).
 - **Thermal & Power Guide** — coolant required at a given power level, and expected cooling behaviour at each level. Power levels are not capped at 100%; the tool reflects overdrive up to and beyond 230%.
 - **Warp Guide** — recommended warp/reactor setup for a given travel distance. Enter a sector count to see the nearest tabled setup(s); if the distance falls between two tabled entries, both bracketing rows are shown. Defaults to the all-distance (∞) setup when no distance is entered.
@@ -14,9 +25,11 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 ## File structure
 
 ```
-index.html               Main page (all four tabs)
+index.html               Main page (all six tabs)
 css/style.css            UCN dark navy theme
 js/app.js                Tab switching, warp calculator, damage control data
+js/mission.js            Setup, action log, PDF/JSON export
+js/vendor/               jsPDF, vendored so exports work offline
 fonts/                   Exo 2 + Orbitron (WOFF2, with TTF fallback)
 assets/                  UCN logo
 ship-maps/               HAVOCK_SHIP_MAP.pdf, Takanami_Ship_Map.pdf
@@ -66,9 +79,16 @@ URL — a Netlify deploy preview, for instance — instead of starting a local
 server, which is a way to check that what actually shipped behaves like the
 working tree.
 
+## Mission data
+
+Setup details and the action log are held in `localStorage` on the device that
+recorded them. They are not uploaded anywhere and are not shared between
+devices or browsers. Clearing site data, or the **Clear mission data** button,
+removes them. Export before you finish if you need to keep a mission.
+
 ## Data source
 
-Power, thermal, and warp figures are community-compiled reference data and are subject to change as ship mechanics are updated. This tool does not generate or export any files — it's read-only reference material.
+Power, thermal, and warp figures are community-compiled reference data and are subject to change as ship mechanics are updated. The reference tables are read-only. The Action Log is the only part that records anything, and it exports only when you ask it to.
 
 ## Credit
 

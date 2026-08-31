@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { openTab } from './helpers.mjs';
 
 test.beforeEach(async ({ page }) => {
@@ -133,8 +134,17 @@ test.describe('conduits', () => {
     await expect(page.locator('#statConduit')).toHaveText('3');
 
     // Grouped failures share one start time, which is what lets an importer
-    // reassemble them as a single event.
-    const starts = await page.locator('.active-start').allTextContents();
+    // reassemble them as a single event. Checked against the exported ISO
+    // timestamps rather than the on-screen clock: the clock is only accurate
+    // to the second, so it cannot tell a deliberately shared timestamp from
+    // three per-entry ones taken in the same second.
+    const wait = page.waitForEvent('download');
+    await page.click('#exportJsonBtn');
+    const data = JSON.parse(
+      readFileSync(await (await wait).path(), 'utf8')
+    );
+    const starts = data.entries.filter(e => e.kind === 'conduit').map(e => e.startedAt);
+    expect(starts).toHaveLength(3);
     expect(new Set(starts).size).toBe(1);
   });
 
