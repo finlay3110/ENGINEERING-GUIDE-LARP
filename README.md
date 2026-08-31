@@ -13,9 +13,9 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 - **Action Log** — records manual repairs with a start and end time. Manual
   repair leads to OCP, crystals, conduits or reactor; OCP and crystals then
   list that ship's locations, and conduits are multi-select because they
-  usually drop in groups. Separate one-tap buttons log a power crystal swap
+  usually drop in groups. Separate one-tap buttons log a power cell swap
   and a hull integrity reading, both of which are moments rather than timed
-  repairs. Running totals for OCP, crystal and conduit repairs and crystal
+  repairs. Running totals for OCP, crystal and conduit repairs and power cell
   swaps, plus spare OCPs counting down from five. Reactor repairs and hull
   readings are recorded in the log and the exports without a counter of their
   own. Exports to PDF or JSON, with a handover prompt describing the JSON to

@@ -19,19 +19,19 @@ async function exportJson(page) {
   return JSON.parse(readFileSync(await (await wait).path(), 'utf8'));
 }
 
-test.describe('power crystal swap', () => {
+test.describe('power cell swap', () => {
   // Deliberately not part of the manual repair menu: the swap is the whole
   // event, so it is one button rather than a nested target picker.
   test('logs in a single tap with no menu', async ({ page }) => {
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
     await expect(page.locator('#repairDialog')).toBeHidden();
     await expect(page.locator('#statSwap')).toHaveText('1');
     await expect(page.locator('#logTableBody tr')).toHaveCount(1);
-    await expect(page.locator('#logTableBody')).toContainText('Power crystal swapped');
+    await expect(page.locator('#logTableBody')).toContainText('Power cell swapped');
   });
 
   test('is an instant event, not a timed repair', async ({ page }) => {
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
     // Nothing to complete, no start-to-end arrow, no duration.
     await expect(page.locator('.active-item')).toHaveCount(0);
     const row = page.locator('#logTableBody tr').first();
@@ -41,14 +41,37 @@ test.describe('power crystal swap', () => {
   });
 
   test('does not consume an OCP spare or count as a crystal repair', async ({ page }) => {
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
     await expect(page.locator('#statSpares')).toHaveText('5');
     await expect(page.locator('#statCrystal')).toHaveText('0');
   });
 
   test('counts each swap', async ({ page }) => {
-    for (let i = 0; i < 3; i++) await page.click('#crystalSwapBtn');
+    for (let i = 0; i < 3; i++) await page.click('#cellSwapBtn');
     await expect(page.locator('#statSwap')).toHaveText('3');
+  });
+
+  // The action shipped briefly as "crystalSwap" before the part was correctly
+  // named a power cell. Anyone who used it in that window has stored entries
+  // under the old kind, which would otherwise render as a raw string.
+  test('entries stored under the old kind name still load', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('ucn-mission-v1', JSON.stringify({
+        entries: [{
+          id: 'legacy1',
+          kind: 'crystalSwap',
+          startedAt: '2026-01-01T10:00:00.000Z',
+          endedAt: '2026-01-01T10:00:00.000Z',
+          ship: 'havock',
+        }],
+      }));
+    });
+    await page.reload();
+    await openTab(page, 'log');
+
+    await expect(page.locator('#logTableBody')).toContainText('Power cell swapped');
+    await expect(page.locator('#logTableBody')).not.toContainText('crystalSwap');
+    await expect(page.locator('#statSwap')).toHaveText('1');
   });
 });
 
@@ -148,7 +171,7 @@ test.describe('hull integrity', () => {
 
   test('survives a reload', async ({ page }) => {
     await logHull(page, 55);
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
     await page.reload();
     await openTab(page, 'log');
     await expect(rows(page)).toHaveCount(2);
@@ -171,7 +194,7 @@ test.describe('export', () => {
   });
 
   test('reports no hull data when none was recorded', async ({ page }) => {
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
     const data = await exportJson(page);
     expect(data.hull.latest).toBeNull();
     expect(data.hull.latestAt).toBeNull();
@@ -180,24 +203,24 @@ test.describe('export', () => {
 
   test('value is set on hull entries and null elsewhere', async ({ page }) => {
     await logHull(page, 42);
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
 
     const data = await exportJson(page);
     expect(data.entries.find(e => e.kind === 'hull').value).toBe(42);
-    expect(data.entries.find(e => e.kind === 'crystalSwap').value).toBeNull();
+    expect(data.entries.find(e => e.kind === 'cellSwap').value).toBeNull();
   });
 
   // A zero-second duration would read as an instant repair rather than an
   // event that happened at a point in time.
   test('instant kinds export a null duration', async ({ page }) => {
     await logHull(page, 42);
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
     page.once('dialog', d => d.accept('a note'));
     await page.click('#noteBtn');
 
     const data = await exportJson(page);
     const instants = data.entries.filter(e =>
-      ['hull', 'crystalSwap', 'note'].includes(e.kind));
+      ['hull', 'cellSwap', 'note'].includes(e.kind));
     expect(instants).toHaveLength(3);
     for (const e of instants) {
       expect(e.durationSeconds, `${e.kind} duration`).toBeNull();
@@ -208,16 +231,16 @@ test.describe('export', () => {
   test('totals count the new kinds', async ({ page }) => {
     await logHull(page, 80);
     await logHull(page, 70);
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
 
     const data = await exportJson(page);
     expect(data.totals.hull).toBe(2);
-    expect(data.totals.crystalSwap).toBe(1);
+    expect(data.totals.cellSwap).toBe(1);
   });
 
   test('the PDF still builds with the new kinds present', async ({ page }) => {
     await logHull(page, 80);
-    await page.click('#crystalSwapBtn');
+    await page.click('#cellSwapBtn');
 
     const wait = page.waitForEvent('download');
     await page.click('#exportPdfBtn');
@@ -231,7 +254,7 @@ test.describe('export', () => {
     const text = await page.inputValue('#promptText');
 
     expect(text).toContain('"hull"');
-    expect(text).toContain('"crystalSwap"');
+    expect(text).toContain('"cellSwap"');
     expect(text).toContain('hull.readings');
     expect(text).toMatch(/value —/);
     // The distinction an importer would otherwise get wrong.

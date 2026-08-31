@@ -27,7 +27,7 @@ const KINDS = {
   crystal: { label: 'Crystal repair', group: 'Crystals', tile: 'statCrystal', countable: true },
   conduit: { label: 'Conduit repair', group: 'Destabilisation Conduits', tile: 'statConduit', countable: true },
   reactor: { label: 'Reactor repair', group: null, tile: null, countable: true },
-  crystalSwap: { label: 'Power crystal swapped', group: null, tile: 'statSwap', countable: true, instant: true },
+  cellSwap: { label: 'Power cell swapped', group: null, tile: 'statSwap', countable: true, instant: true },
   hull: { label: 'Hull integrity', group: null, tile: null, countable: false, instant: true },
   note: { label: 'Note', group: null, tile: null, countable: false, instant: true },
 };
@@ -66,11 +66,20 @@ function load() {
       operator: { ...blankState().operator, ...saved.operator },
       mission: { ...blankState().mission, ...saved.mission },
       modules: { ...blankState().modules, ...saved.modules },
-      entries: Array.isArray(saved.entries) ? saved.entries : [],
+      entries: Array.isArray(saved.entries) ? saved.entries.map(migrate) : [],
     };
   } catch {
     state = blankState();
   }
+}
+
+/** Bring a stored entry up to the current shape. The swap action shipped
+ *  briefly as "crystalSwap" before the part was correctly named a power cell;
+ *  without this, those entries would render as a raw kind string and stop
+ *  counting towards the tile. */
+function migrate(entry) {
+  if (entry?.kind === 'crystalSwap') return { ...entry, kind: 'cellSwap' };
+  return entry;
 }
 
 function save() {
@@ -150,7 +159,7 @@ const statSpares = $('statSpares');
 const spareMinus = $('spareMinus');
 const sparePlus = $('sparePlus');
 const exportNote = $('exportNote');
-const crystalSwapBtn = $('crystalSwapBtn');
+const cellSwapBtn = $('cellSwapBtn');
 const hullBtn = $('hullBtn');
 const hullDialog = $('hullDialog');
 const hullForm = $('hullForm');
@@ -576,11 +585,11 @@ noteBtn.addEventListener('click', () => {
   logInstant('note', { note: text.trim() });
 });
 
-// A crystal swap is its own action, not a repair: one tap, no target menu and
+// A cell swap is its own action, not a repair: one tap, no target menu and
 // no repair clock, because the swap is the whole event.
-crystalSwapBtn.addEventListener('click', () => {
-  logInstant('crystalSwap');
-  note(exportNote, `Power crystal swap logged at ${clockTime(new Date().toISOString())}.`);
+cellSwapBtn.addEventListener('click', () => {
+  logInstant('cellSwap');
+  note(exportNote, `Power cell swap logged at ${clockTime(new Date().toISOString())}.`);
 });
 
 // ---------------------------------------------------------------- hull -----
@@ -771,8 +780,8 @@ $('exportPdfBtn').addEventListener('click', async () => {
     // written report even though they do not need watching mid-mission.
     if (!meta.countable) continue;
     const n = state.entries.filter(e => e.kind === kind).length;
-    // "Power crystal swapped" is already past tense; appending an s to every
-    // label would read as "Power crystal swappeds".
+    // "Power cell swapped" is already past tense; appending an s to every
+    // label would read as "Power cell swappeds".
     line(`${meta.label}${meta.label.endsWith('d') ? '' : 's'}: ${n}`);
   }
   line(`Spare OCPs remaining: ${state.spares} of ${DEFAULT_SPARES}`);
@@ -871,7 +880,7 @@ ENTRIES
 Each entry has:
 - id — unique within this file only. Do not assume it is globally unique;
   namespace it if you merge several exports.
-- kind — one of: "ocp", "crystal", "conduit", "reactor", "crystalSwap",
+- kind — one of: "ocp", "crystal", "conduit", "reactor", "cellSwap",
   "hull", "note".
 - target — what was repaired. For "ocp" and "crystal" this is a system name
   such as "Impulse" or "Beams". For "conduit" it is the conduit number as a
@@ -890,9 +899,9 @@ Each entry has:
 
 TIMED VERSUS INSTANT KINDS
 "ocp", "crystal", "conduit" and "reactor" are repairs timed from start to end.
-"crystalSwap", "hull" and "note" are instantaneous: they carry an endedAt equal
+"cellSwap", "hull" and "note" are instantaneous: they carry an endedAt equal
 to their startedAt, and durationSeconds is null. Do not present those as
-zero-length repairs — they are events at a point in time. A crystal swap is
+zero-length repairs — they are events at a point in time. A power cell swap is
 deliberately not a repair: it is recorded as its own action.
 
 IMPORT RULES
