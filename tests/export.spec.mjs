@@ -116,39 +116,3 @@ test('the PDF library is only fetched when export is pressed', async ({ page }) 
   await wait;
   expect(hits.length).toBeGreaterThan(0);
 });
-
-test.describe('handover prompt', () => {
-  test('describes the format it ships with', async ({ page }) => {
-    await seedMission(page);
-    await page.click('#importPromptBtn');
-    await expect(page.locator('#promptDialog')).toBeVisible();
-
-    const text = await page.inputValue('#promptText');
-    expect(text).toContain('ucn.engineering.log/1');
-    for (const kind of ['ocp', 'crystal', 'conduit', 'reactor', 'note']) {
-      expect(text, `documents kind ${kind}`).toContain(`"${kind}"`);
-    }
-    // The rules an importer would otherwise have to guess at.
-    expect(text).toMatch(/null/);
-    expect(text).toMatch(/UTC/);
-    expect(text).toMatch(/untrusted/i);
-    expect(text).toMatch(/sort/i);
-  });
-
-  test('embeds a sample taken from the current mission', async ({ page }) => {
-    await seedMission(page);
-    await page.click('#importPromptBtn');
-    const text = await page.inputValue('#promptText');
-
-    // Anchor on the section marker rather than the first brace: the prose
-    // above it describes object shapes and contains braces of its own.
-    const marker = text.indexOf('EXAMPLE');
-    expect(marker, 'prompt should have an EXAMPLE section').toBeGreaterThan(-1);
-    const sample = text.slice(text.indexOf('{', marker));
-    const parsed = JSON.parse(sample);
-    expect(parsed.schema).toBe('ucn.engineering.log/1');
-    expect(parsed.operator.name).toBe('Fin');
-    // Trimmed so the prompt stays readable rather than pasting the whole log.
-    expect(parsed.entries.length).toBeLessThanOrEqual(2);
-  });
-});

@@ -701,7 +701,6 @@ td.empty{text-align:center;}
   max-height:calc(100vh - 64px);
   overflow-y:auto;
 }
-.repair-dialog.wide{width:min(760px, calc(100vw - 32px));}
 .repair-dialog::backdrop{background:rgba(5,9,18,0.72);}
 .dialog-head{
   display:flex;
@@ -755,18 +754,6 @@ td.empty{text-align:center;}
 .check-list .check{border-top:1px solid var(--line);}
 .check-list .check:first-child{border-top:none;}
 
-.prompt-text{
-  width:100%;
-  background:var(--page-bg);
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:9px;
-  padding:12px 14px;
-  font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size:11.5px;
-  line-height:1.55;
-  resize:vertical;
-}
 
 /* ---------- responsive additions ---------- */
 @media (max-width:700px){

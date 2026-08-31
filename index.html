@@ -202,7 +202,6 @@
         <button type="button" id="exportPdfBtn" class="pill-btn">Export PDF</button>
         <button type="button" id="exportChartBtn" class="pill-btn">Export hull chart</button>
         <button type="button" id="exportJsonBtn" class="pill-btn">Export JSON</button>
-        <button type="button" id="importPromptBtn" class="ghost-btn">Handover prompt</button>
       </div>
       <p class="hint" id="exportNote" role="status" aria-live="polite"></p>
     </section>
@@ -369,20 +368,6 @@
         <button type="submit" class="pill-btn solid">Log reading</button>
       </div>
     </form>
-  </dialog>
-
-  <!-- ============ HANDOVER PROMPT ============ -->
-  <dialog id="promptDialog" class="repair-dialog wide" aria-labelledby="promptDialogTitle">
-    <div class="dialog-head">
-      <h3 id="promptDialogTitle">Handover prompt</h3>
-      <button type="button" id="promptClose" class="mini-btn ghost" aria-label="Close">&times;</button>
-    </div>
-    <p class="dialog-sub">Give this to the other app along with the exported JSON. It describes the file well enough to be imported without any other context.</p>
-    <textarea id="promptText" class="prompt-text" readonly rows="16"></textarea>
-    <div class="dialog-foot">
-      <button type="button" id="promptCopy" class="pill-btn solid">Copy to clipboard</button>
-      <span class="hint" id="promptCopied" role="status" aria-live="polite"></span>
-    </div>
   </dialog>
 
   <p class="credit">Designed by Lt Fin "Tetra"</p>

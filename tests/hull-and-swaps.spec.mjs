@@ -247,18 +247,4 @@ test.describe('export', () => {
     const buf = readFileSync(await (await wait).path());
     expect(buf.subarray(0, 5).toString()).toBe('%PDF-');
   });
-
-  test('the handover prompt documents the new kinds and fields', async ({ page }) => {
-    await logHull(page, 80);
-    await page.click('#importPromptBtn');
-    const text = await page.inputValue('#promptText');
-
-    expect(text).toContain('"hull"');
-    expect(text).toContain('"cellSwap"');
-    expect(text).toContain('hull.readings');
-    expect(text).toMatch(/value —/);
-    // The distinction an importer would otherwise get wrong.
-    expect(text).toMatch(/INSTANT/i);
-    expect(text).toMatch(/zero-length/i);
-  });
 });
