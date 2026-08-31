@@ -20,8 +20,9 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
   repairs. Running totals for OCP, crystal and conduit repairs and power cell
   swaps, plus spare OCPs counting down from five. Reactor repairs and hull
   readings are recorded in the log and the exports without a counter of their
-  own. Exports to PDF or JSON, with a handover prompt describing the JSON to
-  another app.
+  own. Hull readings are charted over time — the chart is embedded in the PDF,
+  and **Export hull chart** saves it alone as a PNG. Exports to PDF or JSON,
+  with a handover prompt describing the JSON to another app.
 
 - **Power Management** — how increasing power allocation affects each ship system (reactor, beams, missiles, manoeuvring, impulse, warp, shields, scanner, cargo docks).
 - **Thermal & Power Guide** — coolant required at a given power level, and expected cooling behaviour at each level. Power levels are not capped at 100%; the tool reflects overdrive up to and beyond 230%.
