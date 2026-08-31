@@ -145,3 +145,109 @@ test('cancelling the clear confirmation keeps the data', async ({ page }) => {
   await page.click('#clearSessionBtn');
   await expect(page.locator('#opName')).toHaveValue('Fin');
 });
+
+test.describe('new mission', () => {
+  /** A mission with details, non-default settings and a log. */
+  async function seed(page) {
+    await page.fill('#opName', 'Fin');
+    await page.fill('#opRank', 'Lt');
+    await page.fill('#missionName', 'Kestrel Relief');
+    await page.fill('#missionType', 'Patrol');
+    await page.selectOption('#setupShip', 'takanami');
+    await page.uncheck('#modPower');
+    await page.click('#nowBtn');
+
+    await openTab(page, 'log');
+    await page.click('#manualRepairBtn');
+    await page.click('[data-kind="ocp"]');
+    await page.click('#repairDialogBody .choice >> nth=0');
+    await page.click('.active-item [data-complete]');
+    await page.click('#cellSwapBtn');
+    await openTab(page, 'setup');
+  }
+
+  // The distinction from "Clear mission data": the operator and their setup
+  // carry over to the next watch, only the mission itself is cleared.
+  test('keeps the operator and their settings', async ({ page }) => {
+    await seed(page);
+    page.once('dialog', d => d.accept());
+    await page.click('#newMissionBtn');
+
+    await expect(page.locator('#opName')).toHaveValue('Fin');
+    await expect(page.locator('#opRank')).toHaveValue('Lt');
+    await expect(page.locator('#setupShip')).toHaveValue('takanami');
+    await expect(page.locator('#modPower')).not.toBeChecked();
+  });
+
+  test('clears the mission and its log', async ({ page }) => {
+    await seed(page);
+    page.once('dialog', d => d.accept());
+    await page.click('#newMissionBtn');
+
+    await expect(page.locator('#missionName')).toHaveValue('');
+    await expect(page.locator('#missionType')).toHaveValue('');
+
+    await openTab(page, 'log');
+    await expect(page.locator('#logTableBody')).toContainText('Nothing logged yet');
+    await expect(page.locator('#statOcp')).toHaveText('0');
+    await expect(page.locator('#statSwap')).toHaveText('0');
+    // A fresh locker for the new mission.
+    await expect(page.locator('#statSpares')).toHaveText('5');
+  });
+
+  test('stamps a fresh start time', async ({ page }) => {
+    await seed(page);
+    page.once('dialog', d => d.accept());
+    await page.click('#newMissionBtn');
+    await expect(page.locator('#missionStart')).toHaveValue(/^\d{4}-\d\d-\d\dT\d\d:\d\d$/);
+  });
+
+  test('the summary keeps the operator but drops the old mission', async ({ page }) => {
+    await seed(page);
+    page.once('dialog', d => d.accept());
+    await page.click('#newMissionBtn');
+
+    await openTab(page, 'log');
+    await expect(page.locator('#logSummary')).toContainText('Lt Fin');
+    await expect(page.locator('#logSummary')).not.toContainText('Kestrel Relief');
+  });
+
+  test('warns what will be lost, and cancelling changes nothing', async ({ page }) => {
+    await seed(page);
+
+    let message = '';
+    page.once('dialog', d => { message = d.message(); d.dismiss(); });
+    await page.click('#newMissionBtn');
+
+    expect(message).toContain('2 logged actions');
+    expect(message).toMatch(/name, rank, ship/);
+    expect(message).toMatch(/export/i);
+
+    await expect(page.locator('#missionName')).toHaveValue('Kestrel Relief');
+    await openTab(page, 'log');
+    await expect(page.locator('#logTableBody tr')).toHaveCount(2);
+  });
+
+  // Nothing to lose, so nothing to confirm.
+  test('does not confirm when the log is empty', async ({ page }) => {
+    await page.fill('#opName', 'Fin');
+    let asked = false;
+    page.on('dialog', d => { asked = true; d.accept(); });
+    await page.click('#newMissionBtn');
+
+    expect(asked).toBe(false);
+    await expect(page.locator('#opName')).toHaveValue('Fin');
+  });
+
+  test('persists across a reload', async ({ page }) => {
+    await seed(page);
+    page.once('dialog', d => d.accept());
+    await page.click('#newMissionBtn');
+
+    await page.reload();
+    await expect(page.locator('#opName')).toHaveValue('Fin');
+    await expect(page.locator('#missionName')).toHaveValue('');
+    await openTab(page, 'log');
+    await expect(page.locator('#logTableBody')).toContainText('Nothing logged yet');
+  });
+});

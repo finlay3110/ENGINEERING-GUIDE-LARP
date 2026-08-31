@@ -830,3 +830,8 @@ td.empty{text-align:center;}
 
 #hullError:empty{display:none;}
 #hullError{color:var(--danger); font-weight:700;}
+
+.setup-actions-note{
+  margin:12px 0 0;
+  max-width:640px;
+}

@@ -142,6 +142,7 @@ const setupShip = $('setupShip');
 const modPower = $('modPower');
 const modDamage = $('modDamage');
 const nowBtn = $('nowBtn');
+const newMissionBtn = $('newMissionBtn');
 const clearSessionBtn = $('clearSessionBtn');
 const setupSaved = $('setupSaved');
 
@@ -424,6 +425,30 @@ nowBtn.addEventListener('click', () => {
   missionStart.value = toLocalInput(new Date().toISOString());
   readSetupForm();
   note(setupSaved, 'Start time set.');
+});
+
+// Starting the next watch, not wiping the device: the operator, their ship and
+// their section choices carry over, while everything specific to the mission
+// that just ended is cleared.
+newMissionBtn.addEventListener('click', () => {
+  const count = state.entries.length;
+  if (count) {
+    const warning =
+      `Start a new mission? This clears the mission name and type and deletes ` +
+      `${count} logged ${count === 1 ? 'action' : 'actions'}, and resets spare OCPs to ` +
+      `${DEFAULT_SPARES}.\n\nYour name, rank, ship and section choices are kept.\n\n` +
+      `Export the log first if you need to keep it — this cannot be undone.`;
+    if (!confirm(warning)) return;
+  }
+
+  state.mission = { name: '', type: '', startedAt: new Date().toISOString() };
+  state.entries = [];
+  state.spares = DEFAULT_SPARES;
+
+  save();
+  fillSetupForm();
+  render();
+  note(setupSaved, 'New mission started.');
 });
 
 clearSessionBtn.addEventListener('click', () => {
