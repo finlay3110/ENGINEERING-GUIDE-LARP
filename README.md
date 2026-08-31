@@ -15,9 +15,11 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
   list that ship's locations, and conduits are multi-select because they
   usually drop in groups. Separate one-tap buttons log a power crystal swap
   and a hull integrity reading, both of which are moments rather than timed
-  repairs. Running totals per kind, spare OCPs counting down from five, and
-  the latest hull reading. Exports to PDF or JSON, with a handover prompt
-  describing the JSON to another app.
+  repairs. Running totals for OCP, crystal and conduit repairs and crystal
+  swaps, plus spare OCPs counting down from five. Reactor repairs and hull
+  readings are recorded in the log and the exports without a counter of their
+  own. Exports to PDF or JSON, with a handover prompt describing the JSON to
+  another app.
 
 - **Power Management** — how increasing power allocation affects each ship system (reactor, beams, missiles, manoeuvring, impulse, warp, shields, scanner, cargo docks).
 - **Thermal & Power Guide** — coolant required at a given power level, and expected cooling behaviour at each level. Power levels are not capped at 100%; the tool reflects overdrive up to and beyond 230%.
