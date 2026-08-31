@@ -804,15 +804,6 @@ td.empty{text-align:center;}
 }
 
 /* ---------- hull integrity ---------- */
-.stat-sub{
-  font-size:10.5px;
-  color:var(--muted);
-  line-height:1.2;
-}
-.stat-hull .stat-value{color:var(--text);}
-.stat-hull.is-low .stat-value{color:var(--amber);}
-.stat-hull.is-out .stat-value{color:var(--danger);}
-
 .repair-dialog.narrow{width:min(400px, calc(100vw - 32px));}
 
 .quick-values{

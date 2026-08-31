@@ -52,19 +52,28 @@ test.describe('power crystal swap', () => {
   });
 });
 
+// Hull readings live in the action log and the exports. They deliberately get
+// no stat tile, so every assertion here reads the log rather than a counter.
 test.describe('hull integrity', () => {
-  test('starts unrecorded', async ({ page }) => {
-    await expect(page.locator('#statHull')).toHaveText('—');
-    await expect(page.locator('#statHullAt')).toHaveText('');
+  const rows = page => page.locator('#logTableBody tr');
+
+  test('has no stat tile', async ({ page }) => {
+    await expect(page.locator('#statHull')).toHaveCount(0);
+    await expect(page.locator('#hullStat')).toHaveCount(0);
   });
 
-  test('records a reading and shows it with its time', async ({ page }) => {
+  test('starts unrecorded', async ({ page }) => {
+    await expect(page.locator('#logTableBody')).toContainText('Nothing logged yet');
+  });
+
+  test('records a reading with its value and time', async ({ page }) => {
     await logHull(page, 72);
     await expect(page.locator('#hullDialog')).toBeHidden();
-    await expect(page.locator('#statHull')).toHaveText('72%');
-    await expect(page.locator('#statHullAt')).toHaveText(/at \d\d:\d\d:\d\d/);
-    await expect(page.locator('#logTableBody')).toContainText('Hull integrity');
-    await expect(page.locator('#logTableBody')).toContainText('72%');
+
+    const row = rows(page).first();
+    await expect(row).toContainText('Hull integrity');
+    await expect(row).toContainText('72%');
+    await expect(row.locator('td').first()).toHaveText(/\d\d:\d\d:\d\d/);
   });
 
   test('quick buttons fill the value', async ({ page }) => {
@@ -72,7 +81,7 @@ test.describe('hull integrity', () => {
     await page.click('#hullQuick [data-value="50"]');
     await expect(page.locator('#hullValue')).toHaveValue('50');
     await page.click('#hullDialog button[type="submit"]');
-    await expect(page.locator('#statHull')).toHaveText('50%');
+    await expect(rows(page).first()).toContainText('50%');
   });
 
   test('readings accumulate rather than overwrite', async ({ page }) => {
@@ -80,9 +89,10 @@ test.describe('hull integrity', () => {
     await logHull(page, 64);
     await logHull(page, 30);
 
-    // The tile shows the latest, but all three survive in the log.
-    await expect(page.locator('#statHull')).toHaveText('30%');
-    await expect(page.locator('#logTableBody tr')).toHaveCount(3);
+    await expect(rows(page)).toHaveCount(3);
+    // Newest first, and every reading kept rather than replaced.
+    const details = await rows(page).locator('td:nth-child(3)').allTextContents();
+    expect(details).toEqual(['30%', '64%', '100%']);
   });
 
   test('the dialog prefills the last reading', async ({ page }) => {
@@ -91,19 +101,10 @@ test.describe('hull integrity', () => {
     await expect(page.locator('#hullValue')).toHaveValue('80');
   });
 
-  test('warns as integrity drops', async ({ page }) => {
-    await logHull(page, 90);
-    await expect(page.locator('#hullStat')).not.toHaveClass(/is-low|is-out/);
-    await logHull(page, 45);
-    await expect(page.locator('#hullStat')).toHaveClass(/is-low/);
-    await logHull(page, 20);
-    await expect(page.locator('#hullStat')).toHaveClass(/is-out/);
-  });
-
   test('is an instant event with no duration', async ({ page }) => {
     await logHull(page, 60);
     await expect(page.locator('.active-item')).toHaveCount(0);
-    const row = page.locator('#logTableBody tr').first();
+    const row = rows(page).first();
     await expect(row).not.toContainText('→');
     await expect(row.locator('td').nth(3)).toHaveText('—');
   });
@@ -122,15 +123,17 @@ test.describe('hull integrity', () => {
         await page.click('#hullDialog button[type="submit"]');
         await expect(page.locator('#hullError')).not.toHaveText('');
         await expect(page.locator('#hullDialog')).toBeVisible();
-        await expect(page.locator('#statHull')).toHaveText('—');
+        // Nothing reached the log.
+        await expect(page.locator('#logTableBody')).toContainText('Nothing logged yet');
       });
     }
 
     test('accepts the boundaries', async ({ page }) => {
       await logHull(page, 0);
-      await expect(page.locator('#statHull')).toHaveText('0%');
+      await expect(rows(page).first()).toContainText('0%');
       await logHull(page, 100);
-      await expect(page.locator('#statHull')).toHaveText('100%');
+      await expect(rows(page).first()).toContainText('100%');
+      await expect(rows(page)).toHaveCount(2);
     });
 
     test('clears the error once a good value is entered', async ({ page }) => {
@@ -148,7 +151,8 @@ test.describe('hull integrity', () => {
     await page.click('#crystalSwapBtn');
     await page.reload();
     await openTab(page, 'log');
-    await expect(page.locator('#statHull')).toHaveText('55%');
+    await expect(rows(page)).toHaveCount(2);
+    await expect(page.locator('#logTableBody')).toContainText('55%');
     await expect(page.locator('#statSwap')).toHaveText('1');
   });
 });

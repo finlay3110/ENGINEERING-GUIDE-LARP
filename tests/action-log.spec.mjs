@@ -19,7 +19,7 @@ async function startRepair(page, kind, index = 0) {
 test('the log starts empty', async ({ page }) => {
   await expect(page.locator('#activeList')).toContainText('Nothing in progress');
   await expect(page.locator('#logTableBody')).toContainText('Nothing logged yet');
-  for (const id of ['#statOcp', '#statCrystal', '#statConduit', '#statReactor']) {
+  for (const id of ['#statOcp', '#statCrystal', '#statConduit', '#statSwap']) {
     await expect(page.locator(id)).toHaveText('0');
   }
   await expect(page.locator('#statSpares')).toHaveText('5');
@@ -95,14 +95,26 @@ test.describe('starting and ending repairs', () => {
     await expect(page.locator('#logTableBody tr')).not.toContainText('running');
   });
 
+  // Reactor repairs are logged and timed like any other, but deliberately have
+  // no stat tile - they belong in the log rather than on the dashboard.
   test('a reactor repair starts immediately with no target menu', async ({ page }) => {
     await page.click('#manualRepairBtn');
     await page.click('[data-kind="reactor"]');
     await expect(page.locator('#repairDialog')).toBeHidden();
-    await expect(page.locator('#statReactor')).toHaveText('1');
     await expect(page.locator('.active-item')).toContainText('Reactor');
+    await expect(page.locator('#logTableBody')).toContainText('Reactor repair');
     // The reactor is not an OCP and must not draw down the spares.
     await expect(page.locator('#statSpares')).toHaveText('5');
+  });
+
+  test('a reactor repair is timed start to end', async ({ page }) => {
+    await page.click('#manualRepairBtn');
+    await page.click('[data-kind="reactor"]');
+    await expect(page.locator('#logTableBody tr')).toContainText('running');
+    await page.click('.active-item [data-complete]');
+    const row = page.locator('#logTableBody tr').first();
+    await expect(row).toContainText(/\d\d:\d\d:\d\d\s*→\s*\d\d:\d\d:\d\d/);
+    await expect(row.locator('td').nth(3)).toContainText(/\d+m \d\ds/);
   });
 
   test('crystal repairs do not consume OCP spares', async ({ page }) => {

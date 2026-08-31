@@ -124,7 +124,7 @@ test('clearing mission data resets everything', async ({ page }) => {
   await openTab(page, 'log');
   await page.click('#manualRepairBtn');
   await page.click('[data-kind="reactor"]');
-  await expect(page.locator('#statReactor')).toHaveText('1');
+  await expect(page.locator('#logTableBody tr')).toHaveCount(1);
 
   await openTab(page, 'setup');
   page.once('dialog', d => {
@@ -135,7 +135,7 @@ test('clearing mission data resets everything', async ({ page }) => {
 
   await expect(page.locator('#opName')).toHaveValue('');
   await openTab(page, 'log');
-  await expect(page.locator('#statReactor')).toHaveText('0');
+  await expect(page.locator('#logTableBody')).toContainText('Nothing logged yet');
   await expect(page.locator('#statSpares')).toHaveText('5');
 });
 

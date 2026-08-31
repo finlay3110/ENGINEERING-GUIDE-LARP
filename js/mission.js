@@ -13,18 +13,23 @@ const STORE_KEY = 'ucn-mission-v1';
 const SCHEMA = 'ucn.engineering.log/1';
 const DEFAULT_SPARES = 5;
 
-// group: which SHIP_DATA group supplies this kind's targets, if any.
-// stat: the tile showing a running count. Kinds without one are either not a
-// repair (note) or counted differently (hull shows its latest reading).
-// instant: logged at a point in time rather than timed from start to end.
+// group:     which SHIP_DATA group supplies this kind's targets, if any.
+// tile:      the stat tile showing a running count, for the few kinds worth
+//            watching at a glance mid-mission. Reactor repairs and hull
+//            readings are deliberately absent: they belong in the log, not on
+//            the dashboard.
+// countable: appears in the totals of a written report. Broader than `tile` -
+//            reactor repairs are worth counting afterwards even though they
+//            do not warrant a tile.
+// instant:   logged at a point in time rather than timed from start to end.
 const KINDS = {
-  ocp: { label: 'OCP repair', group: 'OCPs', stat: 'statOcp' },
-  crystal: { label: 'Crystal repair', group: 'Crystals', stat: 'statCrystal' },
-  conduit: { label: 'Conduit repair', group: 'Destabilisation Conduits', stat: 'statConduit' },
-  reactor: { label: 'Reactor repair', group: null, stat: 'statReactor' },
-  crystalSwap: { label: 'Power crystal swapped', group: null, stat: 'statSwap', instant: true },
-  hull: { label: 'Hull integrity', group: null, stat: null, instant: true },
-  note: { label: 'Note', group: null, stat: null, instant: true },
+  ocp: { label: 'OCP repair', group: 'OCPs', tile: 'statOcp', countable: true },
+  crystal: { label: 'Crystal repair', group: 'Crystals', tile: 'statCrystal', countable: true },
+  conduit: { label: 'Conduit repair', group: 'Destabilisation Conduits', tile: 'statConduit', countable: true },
+  reactor: { label: 'Reactor repair', group: null, tile: null, countable: true },
+  crystalSwap: { label: 'Power crystal swapped', group: null, tile: 'statSwap', countable: true, instant: true },
+  hull: { label: 'Hull integrity', group: null, tile: null, countable: false, instant: true },
+  note: { label: 'Note', group: null, tile: null, countable: false, instant: true },
 };
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
@@ -147,9 +152,6 @@ const sparePlus = $('sparePlus');
 const exportNote = $('exportNote');
 const crystalSwapBtn = $('crystalSwapBtn');
 const hullBtn = $('hullBtn');
-const hullStat = $('hullStat');
-const statHull = $('statHull');
-const statHullAt = $('statHullAt');
 const hullDialog = $('hullDialog');
 const hullForm = $('hullForm');
 const hullValue = $('hullValue');
@@ -263,20 +265,13 @@ function latestHull() {
 
 function renderStats() {
   for (const [kind, meta] of Object.entries(KINDS)) {
-    if (!meta.stat) continue;
-    const el = $(meta.stat);
+    if (!meta.tile) continue;
+    const el = $(meta.tile);
     if (el) el.textContent = state.entries.filter(e => e.kind === kind).length;
   }
   statSpares.textContent = state.spares;
   spareStat.classList.toggle('is-low', state.spares <= 1);
   spareStat.classList.toggle('is-out', state.spares === 0);
-
-  // Hull shows the latest reading rather than a count of readings.
-  const hull = latestHull();
-  statHull.textContent = hull ? `${hull.value}%` : '—';
-  statHullAt.textContent = hull ? `at ${clockTime(hull.startedAt)}` : '';
-  hullStat.classList.toggle('is-low', !!hull && hull.value <= 50 && hull.value > 25);
-  hullStat.classList.toggle('is-out', !!hull && hull.value <= 25);
 }
 
 function renderSummary() {
@@ -772,7 +767,9 @@ $('exportPdfBtn').addEventListener('click', async () => {
 
   line('Totals', { size: 12, bold: true, gap: 16 });
   for (const [kind, meta] of Object.entries(KINDS)) {
-    if (!meta.stat) continue;
+    // Wider than the on-screen tiles: reactor repairs are worth counting in a
+    // written report even though they do not need watching mid-mission.
+    if (!meta.countable) continue;
     const n = state.entries.filter(e => e.kind === kind).length;
     // "Power crystal swapped" is already past tense; appending an s to every
     // label would read as "Power crystal swappeds".
