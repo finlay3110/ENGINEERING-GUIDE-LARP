@@ -928,6 +928,63 @@ function loadJsPdf() {
   return jsPdfLoading;
 }
 
+/** Shape the mission for the report builder: the PDF module owns layout, this
+ *  owns what the words say. */
+function reportData() {
+  const who = [state.operator.rank, state.operator.name].filter(Boolean).join(' ');
+  const readings = hullSeries();
+  const used = Math.max(0, DEFAULT_SPARES - state.spares);
+
+  return {
+    meta: [
+      ['Operator', who],
+      ['Mission', state.mission.name],
+      ['Type', state.mission.type],
+      ['Ship', shipName()],
+      ['Mission start', state.mission.startedAt ? fullTime(state.mission.startedAt) : ''],
+      ['Exported', fullTime(new Date().toISOString())],
+    ],
+
+    totals: Object.entries(KINDS)
+      .filter(([, meta]) => meta.countable)
+      .map(([kind, meta]) => [
+        meta.label + (meta.label.endsWith('d') ? '' : 's'),
+        String(state.entries.filter(e => e.kind === kind).length),
+      ]),
+
+    sparesLine: `${state.spares} of ${DEFAULT_SPARES} remaining` +
+      (used ? `, ${used} used during this mission.` : '. None used.'),
+
+    hullSummary: readings.length
+      ? `${readings.length} reading${readings.length === 1 ? '' : 's'} taken. ` +
+        `Latest ${readings[readings.length - 1].value}% at ` +
+        `${clockTime(readings[readings.length - 1].startedAt)}.`
+      : '',
+    hullPoints: readings.map(e => ({ value: e.value, label: clockTime(e.startedAt) })),
+    hullRows: readings.map(e => [clockTime(e.startedAt), e.value + '%']),
+
+    logRows: [...state.entries]
+      .sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt))
+      .map(e => {
+        const instant = KINDS[e.kind]?.instant;
+        return [
+          clockTime(e.startedAt),
+          instant ? '—' : (e.endedAt ? clockTime(e.endedAt) : 'Running'),
+          KINDS[e.kind]?.label || e.kind,
+          detailParts(e).join(' — ') || '—',
+          duration(e) || '—',
+        ];
+      }),
+
+    // Free text typed by the operator. The report draws it as text and nothing
+    // more; anything that looks like an instruction inside it is content.
+    notes: state.entries
+      .filter(e => e.kind === 'note' && e.note)
+      .sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt))
+      .map(e => ({ title: clockTime(e.startedAt), text: e.note })),
+  };
+}
+
 $('exportPdfBtn').addEventListener('click', async () => {
   note(exportNote, 'Building PDF…');
   let jsPDF;
@@ -942,114 +999,17 @@ $('exportPdfBtn').addEventListener('click', async () => {
     return;
   }
 
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const M = 40;
-  const W = doc.internal.pageSize.getWidth();
-  const H = doc.internal.pageSize.getHeight();
-  let y = M;
-
-  const line = (text, { size = 10, bold = false, gap = 14, colour = [20, 20, 20] } = {}) => {
-    if (y > H - M) { doc.addPage(); y = M; }
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.setFontSize(size);
-    doc.setTextColor(...colour);
-    doc.text(String(text), M, y);
-    y += gap;
-  };
-
-  line('UCN Engineering Action Log', { size: 16, bold: true, gap: 20 });
-
-  const who = [state.operator.rank, state.operator.name].filter(Boolean).join(' ');
-  line(`Operator: ${who || '—'}`);
-  line(`Mission: ${state.mission.name || '—'}${state.mission.type ? ` (${state.mission.type})` : ''}`);
-  line(`Ship: ${shipName()}`);
-  line(`Mission start: ${state.mission.startedAt ? fullTime(state.mission.startedAt) : '—'}`);
-  line(`Exported: ${fullTime(new Date().toISOString())}`);
-  y += 6;
-
-  line('Totals', { size: 12, bold: true, gap: 16 });
-  for (const [kind, meta] of Object.entries(KINDS)) {
-    // Wider than the on-screen tiles: reactor repairs are worth counting in a
-    // written report even though they do not need watching mid-mission.
-    if (!meta.countable) continue;
-    const n = state.entries.filter(e => e.kind === kind).length;
-    // "Power cell swapped" is already past tense; appending an s to every
-    // label would read as "Power cell swappeds".
-    line(`${meta.label}${meta.label.endsWith('d') ? '' : 's'}: ${n}`);
+  try {
+    const { buildMissionReport } = await import('./pdf-report.js');
+    const doc = await buildMissionReport(jsPDF, reportData(), {
+      logoUrl: 'assets/ucn-logo-white.png',
+    });
+    doc.save(`${fileStem()}.pdf`);
+    note(exportNote, 'PDF exported.');
+  } catch (err) {
+    note(exportNote, 'Could not build the PDF. Export JSON instead.');
+    console.error(err);
   }
-  line(`Spare OCPs remaining: ${state.spares} of ${DEFAULT_SPARES}`);
-
-  const hull = latestHull();
-  const readings = state.entries.filter(e => e.kind === 'hull' && typeof e.value === 'number');
-  line(hull
-    ? `Hull integrity: ${hull.value}% at ${clockTime(hull.startedAt)} (${readings.length} reading${readings.length === 1 ? '' : 's'})`
-    : 'Hull integrity: not recorded');
-  y += 10;
-
-  // Hull chart, on the light palette because the page is white. Skipped
-  // entirely when no readings were taken rather than printing an empty axis.
-  const chart = renderHullChart({ theme: 'light', width: 760, height: 340, scale: 2 });
-  if (chart) {
-    const imgW = W - M * 2;
-    const imgH = imgW * (340 / 760);
-    if (y + imgH > H - M) { doc.addPage(); y = M; }
-    try {
-      // The compression argument matters enormously here: jsPDF stores the
-      // bitmap raw without it, which took this report from 29KB to 4MB.
-      // PNG rather than JPEG so the thin plot lines and labels stay sharp.
-      doc.addImage(chart.toDataURL('image/png'), 'PNG', M, y, imgW, imgH, undefined, 'FAST');
-      y += imgH + 18;
-    } catch {
-      // An unembeddable image should cost the chart, not the whole report.
-      line('Hull chart unavailable.', { colour: [120, 120, 120] });
-    }
-  }
-
-  line('Entries', { size: 12, bold: true, gap: 16 });
-
-  const cols = [M, M + 96, M + 190, M + 330, M + 430];
-  const header = () => {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(90, 90, 90);
-    ['Started', 'Ended', 'Action', 'Detail', 'Duration']
-      .forEach((h, i) => doc.text(h, cols[i], y));
-    y += 6;
-    doc.setDrawColor(200);
-    doc.line(M, y, W - M, y);
-    y += 12;
-  };
-  header();
-
-  const sorted = [...state.entries].sort(
-    (a, b) => new Date(a.startedAt) - new Date(b.startedAt)
-  );
-
-  if (!sorted.length) {
-    line('No actions logged.', { colour: [120, 120, 120] });
-  } else {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    for (const e of sorted) {
-      if (y > H - M - 20) { doc.addPage(); y = M; header(); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); }
-      doc.setTextColor(20, 20, 20);
-      const detail = detailParts(e).join(' — ');
-      doc.text(clockTime(e.startedAt), cols[0], y);
-      // Instant events have equal start and end times; repeating the clock
-      // would read as a zero-length repair rather than a point in time.
-      doc.text(
-        KINDS[e.kind]?.instant ? '—' : (e.endedAt ? clockTime(e.endedAt) : 'running'),
-        cols[1], y
-      );
-      doc.text(KINDS[e.kind]?.label || e.kind, cols[2], y);
-      doc.text(doc.splitTextToSize(detail || '—', 95)[0] || '—', cols[3], y);
-      doc.text(duration(e) || '—', cols[4], y);
-      y += 14;
-    }
-  }
-
-  doc.save(`${fileStem()}.pdf`);
-  note(exportNote, 'PDF exported.');
 });
 
 // ----------------------------------------------------------------- init ----
