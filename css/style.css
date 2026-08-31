@@ -50,6 +50,9 @@
 }
 
 *{box-sizing:border-box;}
+/* Any class here setting display would otherwise beat the user agent's
+   [hidden] rule, and several hideable elements are flex or grid. */
+[hidden]{display:none !important;}
 html,body{
   margin:0; padding:0;
   background:var(--page-bg);
@@ -469,4 +472,353 @@ html,body{
   .ref-table tr.exact-highlight{
     border-color:var(--cyan);
   }
+}
+
+/* ---------- setup form ---------- */
+.field-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(230px,1fr));
+  gap:16px;
+  margin-bottom:24px;
+}
+.field{display:flex; flex-direction:column; gap:6px;}
+.field label{
+  font-size:11.5px;
+  font-weight:700;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.field input,
+.field select{
+  padding:10px 12px;
+  border-radius:7px;
+  border:1.4px solid var(--line);
+  background:var(--input-fill);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  font-size:13.5px;
+  outline:none;
+  width:100%;
+}
+.field input:focus,
+.field select:focus{border-color:var(--cyan);}
+.field-row{display:flex; gap:8px; align-items:center;}
+.field-row input{flex:1; min-width:0;}
+.field-hint{
+  font-size:12px;
+  color:var(--muted);
+  margin:0 0 12px;
+  line-height:1.5;
+}
+
+.modules{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px 18px 6px;
+  margin:0 0 22px;
+}
+.modules legend{
+  font-family:'Orbitron',sans-serif;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.04em;
+  color:var(--text);
+  padding:0 8px;
+}
+.check{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  padding:10px 0;
+  cursor:pointer;
+  border-top:1px solid var(--line);
+}
+.modules .check:first-of-type{border-top:none;}
+.check input{
+  width:18px; height:18px;
+  accent-color:var(--cyan);
+  margin-top:2px;
+  flex:none;
+  cursor:pointer;
+}
+.check span{display:flex; flex-direction:column; gap:2px;}
+.check strong{font-size:13.5px; font-weight:700; color:var(--text);}
+.check small{font-size:11.5px; color:var(--muted); line-height:1.45;}
+
+.setup-actions{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  border-top:1px solid var(--line);
+  padding-top:18px;
+}
+.danger-btn{
+  border:1.4px solid var(--danger);
+  color:var(--danger);
+  background:transparent;
+  font-family:'Exo 2',sans-serif;
+  font-weight:700;
+  font-size:12.5px;
+  padding:9px 16px;
+  border-radius:999px;
+  cursor:pointer;
+}
+.danger-btn:hover{background:var(--danger); color:var(--page-bg);}
+
+/* ---------- action log ---------- */
+.stat-row{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(130px,1fr));
+  gap:12px;
+  margin-bottom:20px;
+}
+.stat{
+  background:var(--input-fill);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.stat-label{
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.stat-value{
+  font-family:'Orbitron',sans-serif;
+  font-size:22px;
+  font-weight:700;
+  color:var(--cyan);
+  line-height:1.1;
+}
+.stat-spares .stat-value{color:var(--text);}
+.stat-spares.is-low .stat-value{color:var(--amber);}
+.stat-spares.is-out .stat-value{color:var(--danger);}
+.spare-controls{display:flex; gap:6px; margin-top:4px;}
+
+.mini-btn{
+  border:1.4px solid var(--line);
+  background:var(--input-fill);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  font-weight:700;
+  font-size:13px;
+  line-height:1;
+  min-width:30px;
+  padding:6px 9px;
+  border-radius:7px;
+  cursor:pointer;
+}
+.mini-btn:hover{border-color:var(--cyan); color:var(--cyan);}
+.mini-btn.ghost{background:transparent; border-color:transparent; color:var(--muted);}
+.mini-btn.ghost:hover{color:var(--cyan);}
+
+.pill-btn.solid{background:var(--cyan); color:var(--page-bg);}
+.pill-btn.solid:hover{filter:brightness(1.1);}
+.pill-btn.sm{font-size:11.5px; padding:7px 13px;}
+.pill-btn:disabled,
+.mini-btn:disabled{opacity:.45; cursor:not-allowed;}
+
+.log-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.log-h3{
+  font-family:'Orbitron',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  color:var(--text);
+  margin:26px 0 10px;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.count-pill{
+  font-family:'Exo 2',sans-serif;
+  font-size:11px;
+  font-weight:700;
+  color:var(--page-bg);
+  background:var(--cyan);
+  border-radius:999px;
+  padding:2px 9px;
+  min-width:22px;
+  text-align:center;
+}
+.empty{
+  color:var(--muted);
+  font-size:12.5px;
+  font-style:italic;
+  margin:0;
+  padding:14px 0;
+}
+td.empty{text-align:center;}
+
+.active-list{display:flex; flex-direction:column; gap:10px;}
+.active-item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  background:var(--input-fill);
+  border:1px solid var(--cyan);
+  border-radius:10px;
+  padding:12px 15px;
+}
+.active-main{display:flex; flex-direction:column; gap:2px; min-width:0;}
+.active-kind{
+  font-size:10.5px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--orange);
+}
+.active-target{font-size:14px; font-weight:700; color:var(--text);}
+.active-loc{font-size:11.5px; color:var(--muted);}
+.active-side{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.active-start{font-size:11.5px; color:var(--muted); white-space:nowrap;}
+
+.log-table tr.row-active td{background:rgba(79,168,201,0.08);}
+.log-table em{color:var(--amber); font-style:normal;}
+.row-tools{display:flex; gap:4px; justify-content:flex-end;}
+
+/* ---------- dialogs ---------- */
+.repair-dialog{
+  background:var(--console);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:20px 22px 22px;
+  width:min(520px, calc(100vw - 32px));
+  max-height:calc(100vh - 64px);
+  overflow-y:auto;
+}
+.repair-dialog::backdrop{background:rgba(5,9,18,0.72);}
+.dialog-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:4px;
+}
+.dialog-head h3{
+  font-family:'Orbitron',sans-serif;
+  font-size:14px;
+  font-weight:600;
+  margin:0;
+  flex:1;
+}
+.dialog-sub{font-size:12.5px; color:var(--muted); margin:0 0 16px; line-height:1.5;}
+.dialog-body{margin-bottom:4px;}
+.dialog-foot{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  border-top:1px solid var(--line);
+  margin-top:16px;
+  padding-top:16px;
+}
+
+.choice-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(200px,1fr));
+  gap:10px;
+}
+.choice{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  text-align:left;
+  background:var(--input-fill);
+  border:1.4px solid var(--line);
+  border-radius:10px;
+  padding:14px 16px;
+  cursor:pointer;
+  font-family:'Exo 2',sans-serif;
+  color:var(--text);
+}
+.choice:hover,
+.choice:focus-visible{border-color:var(--cyan); outline:none;}
+.choice strong{font-size:14px; font-weight:700;}
+.choice small{font-size:11.5px; color:var(--muted);}
+
+.check-list{display:flex; flex-direction:column;}
+.check-list .check{border-top:1px solid var(--line);}
+.check-list .check:first-child{border-top:none;}
+
+
+/* ---------- responsive additions ---------- */
+@media (max-width:700px){
+  .bottom-tab-btn span{font-size:9px;}
+  .bottom-tab-btn svg{width:19px; height:19px;}
+  .bottom-tab-btn{padding:6px 1px 4px;}
+  .active-item{align-items:flex-start; flex-direction:column; gap:10px;}
+  .active-side{width:100%; justify-content:space-between;}
+  .log-table tr.row-active td{background:transparent;}
+  .row-tools{justify-content:flex-start;}
+}
+
+/* The stacked-table rules below 700px right-align every cell against a
+   data-label. Cells that carry no label (the empty state, the row tools)
+   have nothing to sit opposite, so opt them out. */
+@media (max-width:700px){
+  .ref-table td[data-label=""]::before,
+  .ref-table td.empty::before{content:none;}
+  .ref-table td.empty{
+    justify-content:center;
+    text-align:center;
+  }
+  .ref-table td[data-label=""]{justify-content:flex-start;}
+}
+
+/* Visually hidden, still announced. */
+.sr-only{
+  position:absolute;
+  width:1px; height:1px;
+  padding:0; margin:-1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+  border:0;
+}
+
+/* ---------- hull integrity ---------- */
+.repair-dialog.narrow{width:min(400px, calc(100vw - 32px));}
+
+.quick-values{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.quick-values button{
+  flex:1;
+  min-width:52px;
+  border:1.4px solid var(--line);
+  background:var(--input-fill);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  font-weight:700;
+  font-size:13px;
+  padding:9px 6px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.quick-values button:hover,
+.quick-values button:focus-visible{border-color:var(--cyan); color:var(--cyan); outline:none;}
+
+#hullError:empty{display:none;}
+#hullError{color:var(--danger); font-weight:700;}
+
+.setup-actions-note{
+  margin:12px 0 0;
+  max-width:640px;
 }

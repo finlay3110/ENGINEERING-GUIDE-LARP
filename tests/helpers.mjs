@@ -12,6 +12,31 @@ export async function openTab(page, name) {
   await expect(page.locator(`#panel-${name}`)).toBeVisible();
 }
 
+/**
+ * Whether a tab is switched off, independent of which bar this project shows.
+ * Asserting on visibility would only work on desktop, since the whole top bar
+ * is display:none on phones; the module switches set .hidden on the tabs in
+ * both bars, so that is what to read.
+ */
+export function tabHidden(page, name) {
+  return page.evaluate(n => {
+    const tabs = [...document.querySelectorAll(`[role="tab"][data-tab="${n}"]`)];
+    if (!tabs.length) throw new Error(`no tab named ${n}`);
+    return tabs.every(t => t.hidden);
+  }, name);
+}
+
+/** Tab names currently switched on, in document order, deduplicated. */
+export async function availableTabs(page) {
+  return page.evaluate(() => [
+    ...new Set(
+      [...document.querySelectorAll('[role="tab"]')]
+        .filter(t => !t.hidden)
+        .map(t => t.dataset.tab)
+    ),
+  ]);
+}
+
 /** Relative luminance per WCAG 2.x. */
 function luminance([r, g, b]) {
   const f = c => {

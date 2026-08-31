@@ -26,28 +26,40 @@
   </header>
 
   <!-- ============ TABS (desktop/tablet, top) ============ -->
+  <!-- data-module marks tabs that Setup shows or hides. Untagged tabs are
+       always available. -->
   <nav class="tabs" role="tablist" aria-label="Reference sections">
-    <button class="tab-btn active" id="tab-power" data-tab="power" role="tab" aria-selected="true" aria-controls="panel-power" tabindex="0">Power Management</button>
-    <button class="tab-btn" id="tab-thermal" data-tab="thermal" role="tab" aria-selected="false" aria-controls="panel-thermal" tabindex="-1">Thermal &amp; Power Guide</button>
-    <button class="tab-btn" id="tab-warp" data-tab="warp" role="tab" aria-selected="false" aria-controls="panel-warp" tabindex="-1">Warp Guide</button>
-    <button class="tab-btn" id="tab-damage" data-tab="damage" role="tab" aria-selected="false" aria-controls="panel-damage" tabindex="-1">Damage Control</button>
+    <button class="tab-btn active" id="tab-setup" data-tab="setup" role="tab" aria-selected="true" aria-controls="panel-setup" tabindex="0">Setup</button>
+    <button class="tab-btn" id="tab-log" data-tab="log" role="tab" aria-selected="false" aria-controls="panel-log" tabindex="-1">Action Log</button>
+    <button class="tab-btn" id="tab-power" data-tab="power" data-module="power" role="tab" aria-selected="false" aria-controls="panel-power" tabindex="-1">Power Management</button>
+    <button class="tab-btn" id="tab-thermal" data-tab="thermal" data-module="power" role="tab" aria-selected="false" aria-controls="panel-thermal" tabindex="-1">Thermal &amp; Power Guide</button>
+    <button class="tab-btn" id="tab-warp" data-tab="warp" data-module="power" role="tab" aria-selected="false" aria-controls="panel-warp" tabindex="-1">Warp Guide</button>
+    <button class="tab-btn" id="tab-damage" data-tab="damage" data-module="damage" role="tab" aria-selected="false" aria-controls="panel-damage" tabindex="-1">Damage Control</button>
   </nav>
 
   <!-- ============ TABS (phone, fixed bottom bar) ============ -->
   <nav class="bottom-tabs" role="tablist" aria-label="Reference sections">
-    <button class="bottom-tab-btn active" data-tab="power" role="tab" aria-selected="true" aria-controls="panel-power" tabindex="0">
+    <button class="bottom-tab-btn active" data-tab="setup" role="tab" aria-selected="true" aria-controls="panel-setup" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="16" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/></svg>
+      <span>Setup</span>
+    </button>
+    <button class="bottom-tab-btn" data-tab="log" role="tab" aria-selected="false" aria-controls="panel-log" tabindex="-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1z"/><path d="M16 5h2a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h2"/><path d="M9 11h6M9 15h4"/></svg>
+      <span>Log</span>
+    </button>
+    <button class="bottom-tab-btn" data-tab="power" data-module="power" role="tab" aria-selected="false" aria-controls="panel-power" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>
       <span>Power</span>
     </button>
-    <button class="bottom-tab-btn" data-tab="thermal" role="tab" aria-selected="false" aria-controls="panel-thermal" tabindex="-1">
+    <button class="bottom-tab-btn" data-tab="thermal" data-module="power" role="tab" aria-selected="false" aria-controls="panel-thermal" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4a2 2 0 0 0-4 0v10.54a4 4 0 1 0 4 0V4z"/><path d="M12 15v-5"/></svg>
       <span>Thermal</span>
     </button>
-    <button class="bottom-tab-btn" data-tab="warp" role="tab" aria-selected="false" aria-controls="panel-warp" tabindex="-1">
+    <button class="bottom-tab-btn" data-tab="warp" data-module="power" role="tab" aria-selected="false" aria-controls="panel-warp" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M15.5 8.5 13 13l-4.5 2.5L11 11l4.5-2.5z"/></svg>
       <span>Warp</span>
     </button>
-    <button class="bottom-tab-btn" data-tab="damage" role="tab" aria-selected="false" aria-controls="panel-damage" tabindex="-1">
+    <button class="bottom-tab-btn" data-tab="damage" data-module="damage" role="tab" aria-selected="false" aria-controls="panel-damage" tabindex="-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3-3a6 6 0 0 1-8 8l-6.5 6.5a2.1 2.1 0 0 1-3-3L9.7 11a6 6 0 0 1 8-8l-3 3z"/></svg>
       <span>Damage</span>
     </button>
@@ -55,8 +67,147 @@
 
   <main class="panels">
 
+    <!-- ======== TAB: SETUP ======== -->
+    <section class="panel active" id="panel-setup" role="tabpanel" aria-labelledby="tab-setup" tabindex="0">
+      <h2>Mission Setup</h2>
+      <p class="panel-sub">Identify the watch and choose which sections you need. Everything here is saved on this device only, and stays until you clear it.</p>
+
+      <form id="setupForm" novalidate>
+        <div class="field-grid">
+          <div class="field">
+            <label for="opName">Name</label>
+            <input type="text" id="opName" name="opName" autocomplete="name" placeholder="e.g. Fin">
+          </div>
+          <div class="field">
+            <label for="opRank">Rank</label>
+            <input type="text" id="opRank" name="opRank" placeholder="e.g. Lt">
+          </div>
+          <div class="field">
+            <label for="missionStart">Date and time</label>
+            <div class="field-row">
+              <input type="datetime-local" id="missionStart" name="missionStart">
+              <button type="button" id="nowBtn" class="ghost-btn">Now</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="missionName">Mission name</label>
+            <input type="text" id="missionName" name="missionName" placeholder="e.g. Kestrel Relief">
+          </div>
+          <div class="field">
+            <label for="missionType">Mission type</label>
+            <select id="missionType" name="missionType">
+              <option value="">Not set</option>
+              <option value="Frontline">Frontline</option>
+              <option value="Diplomacy">Diplomacy</option>
+              <option value="Exploration">Exploration</option>
+              <option value="Intrigue">Intrigue</option>
+              <option value="Military">Military</option>
+              <option value="Campaign">Campaign</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="setupShip">Ship</label>
+            <select id="setupShip" name="setupShip">
+              <option value="havock">UCS Havock</option>
+              <option value="takanami">UCS Takanami</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset class="modules">
+          <legend>Sections in use</legend>
+          <p class="field-hint">Unticking a section hides its tabs. It does not delete anything already logged.</p>
+          <label class="check">
+            <input type="checkbox" id="modPower" checked>
+            <span><strong>Power Management</strong><small>Shows Power Management, Thermal &amp; Power Guide and Warp Guide</small></span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="modDamage" checked>
+            <span><strong>Damage Control</strong><small>Shows Damage Control, and the repair buttons on the Action Log</small></span>
+          </label>
+        </fieldset>
+
+        <div class="setup-actions">
+          <button type="button" id="newMissionBtn" class="pill-btn solid">New mission</button>
+          <button type="button" id="clearSessionBtn" class="danger-btn">Clear mission data</button>
+          <span class="hint" id="setupSaved" role="status" aria-live="polite"></span>
+        </div>
+        <p class="field-hint setup-actions-note">
+          <strong>New mission</strong> keeps your name, rank, ship and section choices, and clears
+          the mission name, type and log ready for the next one.
+          <strong>Clear mission data</strong> wipes everything, including who you are.
+        </p>
+      </form>
+    </section>
+
+    <!-- ======== TAB: ACTION LOG ======== -->
+    <section class="panel" id="panel-log" role="tabpanel" aria-labelledby="tab-log" tabindex="0">
+      <h2>Action Log</h2>
+      <p class="panel-sub" id="logSummary"></p>
+
+      <div class="stat-row" id="statRow">
+        <div class="stat">
+          <span class="stat-label">OCP repairs</span>
+          <span class="stat-value" id="statOcp">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Crystal repairs</span>
+          <span class="stat-value" id="statCrystal">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Conduit repairs</span>
+          <span class="stat-value" id="statConduit">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Cell swaps</span>
+          <span class="stat-value" id="statSwap">0</span>
+        </div>
+        <div class="stat stat-spares" id="spareStat">
+          <span class="stat-label">Spare OCPs</span>
+          <span class="stat-value" id="statSpares">5</span>
+          <div class="spare-controls">
+            <button type="button" id="spareMinus" class="mini-btn" aria-label="Use a spare OCP">&minus;</button>
+            <button type="button" id="sparePlus" class="mini-btn" aria-label="Return a spare OCP">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="log-actions" id="damageActions">
+        <button type="button" id="manualRepairBtn" class="pill-btn solid">Manual repair</button>
+        <button type="button" id="cellSwapBtn" class="pill-btn">Power cell swapped</button>
+      </div>
+      <div class="log-actions">
+        <button type="button" id="hullBtn" class="pill-btn">Log hull integrity</button>
+        <button type="button" id="noteBtn" class="ghost-btn">Add note</button>
+      </div>
+      <p class="hint" id="damageDisabledNote" hidden>
+        Repair buttons are hidden because Damage Control is not ticked on the Setup tab.
+      </p>
+
+      <h3 class="log-h3">In progress <span class="count-pill" id="activeCount">0</span></h3>
+      <div id="activeList" class="active-list"></div>
+
+      <h3 class="log-h3">Logged actions <span class="count-pill" id="loggedCount">0</span></h3>
+      <div class="table-wrap">
+        <table class="ref-table log-table">
+          <thead>
+            <tr><th>Time</th><th>Action</th><th>Detail</th><th>Duration</th><th><span class="sr-only">Row actions</span></th></tr>
+          </thead>
+          <tbody id="logTableBody"></tbody>
+        </table>
+      </div>
+
+      <h3 class="log-h3">Export</h3>
+      <div class="log-actions">
+        <button type="button" id="exportPdfBtn" class="pill-btn">Export PDF</button>
+        <button type="button" id="exportChartBtn" class="pill-btn">Export hull chart</button>
+        <button type="button" id="exportJsonBtn" class="pill-btn">Export JSON</button>
+      </div>
+      <p class="hint" id="exportNote" role="status" aria-live="polite"></p>
+    </section>
+
     <!-- ======== TAB 1: POWER MANAGEMENT ======== -->
-    <section class="panel active" id="panel-power" role="tabpanel" aria-labelledby="tab-power" tabindex="0">
+    <section class="panel" id="panel-power" role="tabpanel" aria-labelledby="tab-power" tabindex="0">
       <h2>System Effectiveness</h2>
       <p class="panel-sub">How additional power allocation affects each system's performance. Power levels are not capped at 100% &mdash; systems can be overdriven well beyond it, at a coolant cost (see the Thermal &amp; Power Guide).</p>
 
@@ -176,10 +327,58 @@
 
   </main>
 
+  <!-- ============ REPAIR PICKER ============ -->
+  <!-- A native dialog so Esc, focus trapping and the backdrop come for free. -->
+  <dialog id="repairDialog" class="repair-dialog" aria-labelledby="repairDialogTitle">
+    <div class="dialog-head">
+      <button type="button" id="dialogBack" class="mini-btn ghost" hidden>&larr; Back</button>
+      <h3 id="repairDialogTitle">Manual repair</h3>
+      <button type="button" id="dialogClose" class="mini-btn ghost" aria-label="Close">&times;</button>
+    </div>
+    <p class="dialog-sub" id="repairDialogSub"></p>
+    <div id="repairDialogBody" class="dialog-body"></div>
+    <div class="dialog-foot" id="repairDialogFoot" hidden>
+      <button type="button" id="dialogConfirm" class="pill-btn solid">Confirm</button>
+    </div>
+  </dialog>
+
+  <!-- ============ HULL INTEGRITY ============ -->
+  <dialog id="hullDialog" class="repair-dialog narrow" aria-labelledby="hullDialogTitle">
+    <div class="dialog-head">
+      <h3 id="hullDialogTitle">Hull integrity</h3>
+      <button type="button" id="hullClose" class="mini-btn ghost" aria-label="Close">&times;</button>
+    </div>
+    <p class="dialog-sub">Records a reading at the current time. Readings are kept, not overwritten, so the log shows how the hull changed over the mission.</p>
+    <!-- novalidate so the handler below owns the messages; the min/max/required
+         attributes stay for the numeric keypad and spinner behaviour. -->
+    <form id="hullForm" novalidate>
+      <div class="field">
+        <label for="hullValue">Integrity now (%)</label>
+        <input type="number" id="hullValue" min="0" max="100" step="1" inputmode="numeric" placeholder="e.g. 72" required>
+      </div>
+      <div class="quick-values" id="hullQuick">
+        <button type="button" data-value="100">100</button>
+        <button type="button" data-value="75">75</button>
+        <button type="button" data-value="50">50</button>
+        <button type="button" data-value="25">25</button>
+        <button type="button" data-value="0">0</button>
+      </div>
+      <p class="hint" id="hullError" role="alert"></p>
+      <div class="dialog-foot">
+        <button type="submit" class="pill-btn solid">Log reading</button>
+      </div>
+    </form>
+  </dialog>
+
   <p class="credit">Designed by Lt Fin "Tetra"</p>
   <p class="disclaimer">This is a fan-made project and is not approved by or affiliated with Bridge Command / The London Space Elevator Limited. All figures are community reference data and are subject to change.</p>
 </div>
 
 <script src="js/app.js"></script>
+<!-- A module so its top-level declarations get their own scope. Classic
+     scripts share one, and this file needs names app.js already uses.
+     Modules are deferred, so app.js has published window.UCN by the time
+     this runs. -->
+<script type="module" src="js/mission.js"></script>
 </body>
 </html>
