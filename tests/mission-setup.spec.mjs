@@ -17,15 +17,51 @@ test('mission details reach the log summary', async ({ page }) => {
   await page.fill('#opName', 'Fin');
   await page.fill('#opRank', 'Lt');
   await page.fill('#missionName', 'Kestrel Relief');
-  await page.fill('#missionType', 'Patrol');
+  await page.selectOption('#missionType', 'Frontline');
   await page.selectOption('#setupShip', 'takanami');
 
   await openTab(page, 'log');
   const summary = page.locator('#logSummary');
   await expect(summary).toContainText('Lt Fin');
   await expect(summary).toContainText('Kestrel Relief');
-  await expect(summary).toContainText('Patrol');
+  await expect(summary).toContainText('Frontline');
   await expect(summary).toContainText('UCS Takanami');
+});
+
+test.describe('mission type', () => {
+  const TYPES = ['Frontline', 'Diplomacy', 'Exploration', 'Intrigue', 'Military', 'Campaign'];
+
+  test('offers exactly the six mission types', async ({ page }) => {
+    const options = await page.locator('#missionType option').evaluateAll(
+      els => els.map(o => o.value)
+    );
+    // A leading empty option for "not set yet".
+    expect(options).toEqual(['', ...TYPES]);
+  });
+
+  test('each type reaches the log summary and the export', async ({ page }) => {
+    for (const type of TYPES) {
+      await page.selectOption('#missionType', type);
+      await openTab(page, 'log');
+      await expect(page.locator('#logSummary')).toContainText(type);
+      await openTab(page, 'setup');
+    }
+  });
+
+  // A select blanks any value it has no option for. A type stored before the
+  // list was settled must not vanish from the mission on the next visit.
+  test('keeps a stored type that is not in the current list', async ({ page }) => {
+    await page.evaluate(() => {
+      localStorage.setItem('ucn-mission-v1', JSON.stringify({
+        mission: { name: 'Old One', type: 'Patrol', startedAt: '' },
+      }));
+    });
+    await page.reload();
+
+    await expect(page.locator('#missionType')).toHaveValue('Patrol');
+    await openTab(page, 'log');
+    await expect(page.locator('#logSummary')).toContainText('Patrol');
+  });
 });
 
 test('the Now button fills the start time', async ({ page }) => {
@@ -152,7 +188,7 @@ test.describe('new mission', () => {
     await page.fill('#opName', 'Fin');
     await page.fill('#opRank', 'Lt');
     await page.fill('#missionName', 'Kestrel Relief');
-    await page.fill('#missionType', 'Patrol');
+    await page.selectOption('#missionType', 'Frontline');
     await page.selectOption('#setupShip', 'takanami');
     await page.uncheck('#modPower');
     await page.click('#nowBtn');

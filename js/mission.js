@@ -390,11 +390,21 @@ function render() {
 
 // ---------------------------------------------------------------- setup ----
 
+/** Setting a select to a value it has no option for silently blanks it, so a
+ *  stored type from an older list is kept as an extra option rather than
+ *  disappearing from the mission the next time Setup is opened. */
+function setMissionType(value) {
+  if (value && ![...missionType.options].some(o => o.value === value)) {
+    missionType.add(new Option(`${value} (not a current type)`, value));
+  }
+  missionType.value = value;
+}
+
 function fillSetupForm() {
   opName.value = state.operator.name;
   opRank.value = state.operator.rank;
   missionName.value = state.mission.name;
-  missionType.value = state.mission.type;
+  setMissionType(state.mission.type);
   missionStart.value = state.mission.startedAt ? toLocalInput(state.mission.startedAt) : '';
   setupShip.value = state.ship;
   modPower.checked = state.modules.power;

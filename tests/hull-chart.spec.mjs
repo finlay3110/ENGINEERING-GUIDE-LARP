@@ -22,7 +22,7 @@ async function seedSeries(page, values, minutesApart = 11) {
     const base = Date.parse('2026-08-31T19:00:00Z');
     localStorage.setItem('ucn-mission-v1', JSON.stringify({
       operator: { name: 'Fin', rank: 'Lt' },
-      mission: { name: 'Kestrel Relief', type: 'Patrol', startedAt: new Date(base).toISOString() },
+      mission: { name: 'Kestrel Relief', type: 'Frontline', startedAt: new Date(base).toISOString() },
       ship: 'havock',
       entries: values.map((v, i) => {
         const t = new Date(base + i * minutesApart * 60000).toISOString();

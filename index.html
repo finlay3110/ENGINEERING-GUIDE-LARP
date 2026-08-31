@@ -95,15 +95,15 @@
           </div>
           <div class="field">
             <label for="missionType">Mission type</label>
-            <input type="text" id="missionType" name="missionType" list="missionTypes" placeholder="e.g. Patrol">
-            <datalist id="missionTypes">
-              <option value="Patrol"></option>
-              <option value="Escort"></option>
-              <option value="Search and Rescue"></option>
-              <option value="Combat"></option>
-              <option value="Training"></option>
-              <option value="Diplomatic"></option>
-            </datalist>
+            <select id="missionType" name="missionType">
+              <option value="">Not set</option>
+              <option value="Frontline">Frontline</option>
+              <option value="Diplomacy">Diplomacy</option>
+              <option value="Exploration">Exploration</option>
+              <option value="Intrigue">Intrigue</option>
+              <option value="Military">Military</option>
+              <option value="Campaign">Campaign</option>
+            </select>
           </div>
           <div class="field">
             <label for="setupShip">Ship</label>
