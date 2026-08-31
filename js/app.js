@@ -237,7 +237,7 @@ const SHIP_DATA = {
       {
         title:'OCPs',
         rows:[
-          ['Maneuvering', 'Bridge (by helm)'],
+          ['Manoeuvring', 'Bridge (by helm)'],
           ['Impulse', 'Engineering Corridor (by engineering aux screen)'],
           ['Missiles', 'Engineering Corridor (middle)'],
         ]
@@ -270,7 +270,7 @@ const SHIP_DATA = {
       {
         title:'OCPs',
         rows:[
-          ['Maneuvering', 'Bridge (by nav station)'],
+          ['Manoeuvring', 'Bridge (by nav station)'],
           ['Impulse', 'Midship'],
           ['Missiles', 'Aft Engineering'],
         ]
@@ -290,7 +290,7 @@ const SHIP_DATA = {
           ['1', 'Bridge'],
           ['2', 'Engineering'],
           ['3', 'Cargo Bay'],
-          ['4', 'Midship '],
+          ['4', 'Midship (by aux engineering screen)'],
           ['5', 'Medbay'],
         ]
       }
