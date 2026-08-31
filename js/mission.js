@@ -160,6 +160,7 @@ const statSpares = $('statSpares');
 const spareMinus = $('spareMinus');
 const sparePlus = $('sparePlus');
 const exportNote = $('exportNote');
+const exportChartBtn = $('exportChartBtn');
 const cellSwapBtn = $('cellSwapBtn');
 const hullBtn = $('hullBtn');
 const hullDialog = $('hullDialog');
@@ -722,6 +723,150 @@ function exportPayload() {
   };
 }
 
+// ---------------------------------------------------------- hull chart -----
+
+/** Hull readings oldest first — the series the chart plots. */
+function hullSeries() {
+  return state.entries
+    .filter(e => e.kind === 'hull' && typeof e.value === 'number')
+    .sort((a, b) => new Date(a.startedAt) - new Date(b.startedAt));
+}
+
+// Two palettes: the dark one matches the app for the standalone PNG, the light
+// one is for the PDF, which is printed on a white page.
+const CHART_THEMES = {
+  dark: {
+    bg: '#152238', panel: '#1C2A46', grid: '#2A3A5C', text: '#EAF0FB',
+    muted: '#8FA0BE', line: '#4FA8C9', warn: '#E39A3E', danger: '#EE7B7B',
+  },
+  light: {
+    bg: '#FFFFFF', panel: '#F4F6FA', grid: '#D3DAE6', text: '#14171F',
+    muted: '#59627A', line: '#17708F', warn: '#9A6410', danger: '#A82F2F',
+  },
+};
+
+/**
+ * Draw the hull integrity series onto a canvas and return it.
+ * Returns null when there is nothing to plot.
+ */
+function renderHullChart({ theme = 'dark', width = 760, height = 340, scale = 2 } = {}) {
+  const series = hullSeries();
+  if (!series.length) return null;
+
+  const c = CHART_THEMES[theme] || CHART_THEMES.dark;
+  const canvas = document.createElement('canvas');
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  ctx.scale(scale, scale);
+  ctx.textBaseline = 'middle';
+
+  const font = (size, weight = 400) =>
+    `${weight} ${size}px "Exo 2", system-ui, -apple-system, sans-serif`;
+
+  ctx.fillStyle = c.bg;
+  ctx.fillRect(0, 0, width, height);
+
+  // Header
+  const who = [state.operator.rank, state.operator.name].filter(Boolean).join(' ');
+  ctx.fillStyle = c.text;
+  ctx.font = font(15, 700);
+  ctx.fillText('Hull Integrity', 24, 26);
+  ctx.fillStyle = c.muted;
+  ctx.font = font(11);
+  ctx.fillText(
+    [state.mission.name, shipName(), who].filter(Boolean).join(' · '),
+    24, 45
+  );
+
+  const pad = { top: 66, right: 22, bottom: 40, left: 44 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+
+  const x = i => {
+    // Position by timestamp so uneven reading intervals show honestly. When
+    // every reading shares a timestamp the span is zero, so fall back to even
+    // spacing rather than dividing by zero.
+    if (series.length === 1) return pad.left + plotW / 2;
+    const t0 = new Date(series[0].startedAt).getTime();
+    const t1 = new Date(series[series.length - 1].startedAt).getTime();
+    const span = t1 - t0;
+    const frac = span > 0
+      ? (new Date(series[i].startedAt).getTime() - t0) / span
+      : i / (series.length - 1);
+    return pad.left + frac * plotW;
+  };
+  const y = v => pad.top + (1 - v / 100) * plotH;
+
+  // Danger and caution bands, so a low reading reads as low at a glance.
+  ctx.fillStyle = c.danger;
+  ctx.globalAlpha = 0.10;
+  ctx.fillRect(pad.left, y(25), plotW, y(0) - y(25));
+  ctx.fillStyle = c.warn;
+  ctx.fillRect(pad.left, y(50), plotW, y(25) - y(50));
+  ctx.globalAlpha = 1;
+
+  // Gridlines
+  ctx.strokeStyle = c.grid;
+  ctx.lineWidth = 1;
+  ctx.fillStyle = c.muted;
+  ctx.font = font(10);
+  ctx.textAlign = 'right';
+  for (const v of [0, 25, 50, 75, 100]) {
+    const gy = Math.round(y(v)) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, gy);
+    ctx.lineTo(pad.left + plotW, gy);
+    ctx.stroke();
+    ctx.fillText(`${v}%`, pad.left - 8, gy);
+  }
+
+  // Series line
+  if (series.length > 1) {
+    ctx.strokeStyle = c.line;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    series.forEach((e, i) => (i ? ctx.lineTo(x(i), y(e.value)) : ctx.moveTo(x(i), y(e.value))));
+    ctx.stroke();
+  }
+
+  // Points, coloured by band
+  series.forEach((e, i) => {
+    ctx.fillStyle = e.value <= 25 ? c.danger : e.value <= 50 ? c.warn : c.line;
+    ctx.beginPath();
+    ctx.arc(x(i), y(e.value), series.length > 40 ? 2.5 : 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Time labels: at most six, so they never collide.
+  ctx.fillStyle = c.muted;
+  ctx.font = font(10);
+  ctx.textAlign = 'center';
+  const step = Math.max(1, Math.ceil(series.length / 6));
+  series.forEach((e, i) => {
+    if (i % step && i !== series.length - 1) return;
+    ctx.fillText(clockTime(e.startedAt), x(i), height - pad.bottom + 16);
+  });
+
+  // Latest reading, called out.
+  const last = series[series.length - 1];
+  ctx.textAlign = 'right';
+  ctx.fillStyle = last.value <= 25 ? c.danger : last.value <= 50 ? c.warn : c.text;
+  ctx.font = font(15, 700);
+  ctx.fillText(`${last.value}%`, width - pad.right, 26);
+  ctx.fillStyle = c.muted;
+  ctx.font = font(10);
+  ctx.fillText(
+    `${series.length} reading${series.length === 1 ? '' : 's'} · latest ${clockTime(last.startedAt)}`,
+    width - pad.right, 45
+  );
+
+  ctx.textAlign = 'left';
+  return canvas;
+}
+
 function fileStem() {
   const bits = ['ucn-log', state.mission.name || 'mission', shipName()];
   return bits.join('-').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -738,6 +883,25 @@ function download(blob, filename) {
   // Revoking immediately can cancel the download in some browsers.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// The chart on its own, as a PNG. Deliberately not a one-page PDF: a PNG drops
+// straight into a debrief or a chat window, and it needs no PDF library, so it
+// works even if that never loads.
+exportChartBtn.addEventListener('click', () => {
+  const canvas = renderHullChart({ theme: 'dark', width: 900, height: 400, scale: 2 });
+  if (!canvas) {
+    note(exportNote, 'No hull readings logged yet — nothing to chart.');
+    return;
+  }
+  canvas.toBlob(blob => {
+    if (!blob) {
+      note(exportNote, 'Could not build the chart image.');
+      return;
+    }
+    download(blob, `${fileStem()}-hull.png`);
+    note(exportNote, 'Hull chart exported.');
+  }, 'image/png');
+});
 
 $('exportJsonBtn').addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(exportPayload(), null, 2)], { type: 'application/json' });
@@ -817,6 +981,25 @@ $('exportPdfBtn').addEventListener('click', async () => {
     ? `Hull integrity: ${hull.value}% at ${clockTime(hull.startedAt)} (${readings.length} reading${readings.length === 1 ? '' : 's'})`
     : 'Hull integrity: not recorded');
   y += 10;
+
+  // Hull chart, on the light palette because the page is white. Skipped
+  // entirely when no readings were taken rather than printing an empty axis.
+  const chart = renderHullChart({ theme: 'light', width: 760, height: 340, scale: 2 });
+  if (chart) {
+    const imgW = W - M * 2;
+    const imgH = imgW * (340 / 760);
+    if (y + imgH > H - M) { doc.addPage(); y = M; }
+    try {
+      // The compression argument matters enormously here: jsPDF stores the
+      // bitmap raw without it, which took this report from 29KB to 4MB.
+      // PNG rather than JPEG so the thin plot lines and labels stay sharp.
+      doc.addImage(chart.toDataURL('image/png'), 'PNG', M, y, imgW, imgH, undefined, 'FAST');
+      y += imgH + 18;
+    } catch {
+      // An unembeddable image should cost the chart, not the whole report.
+      line('Hull chart unavailable.', { colour: [120, 120, 120] });
+    }
+  }
 
   line('Entries', { size: 12, bold: true, gap: 16 });
 
