@@ -802,3 +802,40 @@ td.empty{text-align:center;}
   white-space:nowrap;
   border:0;
 }
+
+/* ---------- hull integrity ---------- */
+.stat-sub{
+  font-size:10.5px;
+  color:var(--muted);
+  line-height:1.2;
+}
+.stat-hull .stat-value{color:var(--text);}
+.stat-hull.is-low .stat-value{color:var(--amber);}
+.stat-hull.is-out .stat-value{color:var(--danger);}
+
+.repair-dialog.narrow{width:min(400px, calc(100vw - 32px));}
+
+.quick-values{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.quick-values button{
+  flex:1;
+  min-width:52px;
+  border:1.4px solid var(--line);
+  background:var(--input-fill);
+  color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  font-weight:700;
+  font-size:13px;
+  padding:9px 6px;
+  border-radius:8px;
+  cursor:pointer;
+}
+.quick-values button:hover,
+.quick-values button:focus-visible{border-color:var(--cyan); color:var(--cyan); outline:none;}
+
+#hullError:empty{display:none;}
+#hullError{color:var(--danger); font-weight:700;}

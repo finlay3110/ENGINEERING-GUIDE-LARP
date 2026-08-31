@@ -156,6 +156,15 @@
           <span class="stat-label">Reactor repairs</span>
           <span class="stat-value" id="statReactor">0</span>
         </div>
+        <div class="stat">
+          <span class="stat-label">Crystal swaps</span>
+          <span class="stat-value" id="statSwap">0</span>
+        </div>
+        <div class="stat stat-hull" id="hullStat">
+          <span class="stat-label">Hull integrity</span>
+          <span class="stat-value" id="statHull">&mdash;</span>
+          <span class="stat-sub" id="statHullAt"></span>
+        </div>
         <div class="stat stat-spares" id="spareStat">
           <span class="stat-label">Spare OCPs</span>
           <span class="stat-value" id="statSpares">5</span>
@@ -168,6 +177,10 @@
 
       <div class="log-actions" id="damageActions">
         <button type="button" id="manualRepairBtn" class="pill-btn solid">Manual repair</button>
+        <button type="button" id="crystalSwapBtn" class="pill-btn">Power crystal swapped</button>
+      </div>
+      <div class="log-actions">
+        <button type="button" id="hullBtn" class="pill-btn">Log hull integrity</button>
         <button type="button" id="noteBtn" class="ghost-btn">Add note</button>
       </div>
       <p class="hint" id="damageDisabledNote" hidden>
@@ -330,6 +343,34 @@
     <div class="dialog-foot" id="repairDialogFoot" hidden>
       <button type="button" id="dialogConfirm" class="pill-btn solid">Confirm</button>
     </div>
+  </dialog>
+
+  <!-- ============ HULL INTEGRITY ============ -->
+  <dialog id="hullDialog" class="repair-dialog narrow" aria-labelledby="hullDialogTitle">
+    <div class="dialog-head">
+      <h3 id="hullDialogTitle">Hull integrity</h3>
+      <button type="button" id="hullClose" class="mini-btn ghost" aria-label="Close">&times;</button>
+    </div>
+    <p class="dialog-sub">Records a reading at the current time. Readings are kept, not overwritten, so the log shows how the hull changed over the mission.</p>
+    <!-- novalidate so the handler below owns the messages; the min/max/required
+         attributes stay for the numeric keypad and spinner behaviour. -->
+    <form id="hullForm" novalidate>
+      <div class="field">
+        <label for="hullValue">Integrity now (%)</label>
+        <input type="number" id="hullValue" min="0" max="100" step="1" inputmode="numeric" placeholder="e.g. 72" required>
+      </div>
+      <div class="quick-values" id="hullQuick">
+        <button type="button" data-value="100">100</button>
+        <button type="button" data-value="75">75</button>
+        <button type="button" data-value="50">50</button>
+        <button type="button" data-value="25">25</button>
+        <button type="button" data-value="0">0</button>
+      </div>
+      <p class="hint" id="hullError" role="alert"></p>
+      <div class="dialog-foot">
+        <button type="submit" class="pill-btn solid">Log reading</button>
+      </div>
+    </form>
   </dialog>
 
   <!-- ============ HANDOVER PROMPT ============ -->

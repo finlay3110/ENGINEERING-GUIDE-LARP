@@ -140,7 +140,11 @@ test.describe('handover prompt', () => {
     await page.click('#importPromptBtn');
     const text = await page.inputValue('#promptText');
 
-    const sample = text.slice(text.indexOf('{'));
+    // Anchor on the section marker rather than the first brace: the prose
+    // above it describes object shapes and contains braces of its own.
+    const marker = text.indexOf('EXAMPLE');
+    expect(marker, 'prompt should have an EXAMPLE section').toBeGreaterThan(-1);
+    const sample = text.slice(text.indexOf('{', marker));
     const parsed = JSON.parse(sample);
     expect(parsed.schema).toBe('ucn.engineering.log/1');
     expect(parsed.operator.name).toBe('Fin');
