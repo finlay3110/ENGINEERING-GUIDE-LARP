@@ -25,9 +25,12 @@ allTabBtns.forEach(btn=>{
     e.preventDefault();
 
     // Move within the bar the focused tab belongs to, so the visible bar
-    // (top on desktop, bottom on phone) is the one that gets focus.
-    const bar = [...btn.closest('[role="tablist"]').querySelectorAll('[role="tab"]')];
+    // (top on desktop, bottom on phone) is the one that gets focus. Tabs the
+    // Setup module switches have hidden are skipped rather than focused.
+    const bar = [...btn.closest('[role="tablist"]').querySelectorAll('[role="tab"]')]
+      .filter(t => !t.hidden);
     const from = bar.indexOf(btn);
+    if(from === -1) return;
     const to = isEdge
       ? (e.key === 'Home' ? 0 : bar.length - 1)
       : (from + KEYS[e.key] + bar.length) % bar.length;
@@ -317,3 +320,23 @@ viewMapBtn.addEventListener('click', ()=>{
 
 shipSelect.addEventListener('change', renderShip);
 renderShip();
+
+// ============ MODULE VISIBILITY ============
+// Setup decides which reference tabs exist for this mission. Tabs are hidden
+// rather than removed so their panels keep working if a section is switched
+// back on mid-mission.
+function setModuleVisibility(modules){
+  document.querySelectorAll('[role="tab"][data-module]').forEach(tab=>{
+    tab.hidden = !modules[tab.dataset.module];
+  });
+
+  // If the tab that was open has just been hidden, fall back to Setup rather
+  // than leaving the page on a panel with no way back to it.
+  const active = document.querySelector('[role="tab"][aria-selected="true"]');
+  if(!active || active.hidden) activateTab('setup');
+}
+
+// Shared with js/mission.js, which loads after this file.
+window.UCN = { SHIP_DATA, activateTab, setModuleVisibility, setShip(v){
+  if(shipSelect.value !== v){ shipSelect.value = v; renderShip(); }
+} };

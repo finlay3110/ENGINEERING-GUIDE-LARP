@@ -1,10 +1,23 @@
 import { test, expect } from '@playwright/test';
 
-const TABS = ['power', 'thermal', 'warp', 'damage'];
+const TABS = ['setup', 'log', 'power', 'thermal', 'warp', 'damage'];
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/index.html');
 });
+
+/** The visible bar for this project, and the tab names it shows in order.
+ *  Derived from the DOM so adding or hiding a tab doesn't invalidate the
+ *  keyboard tests. */
+async function visibleBar(page) {
+  const sel = (await page.locator('.tabs').isVisible()) ? '.tabs' : '.bottom-tabs';
+  const order = await page.evaluate(
+    s => [...document.querySelectorAll(`${s} [role="tab"]`)]
+      .filter(t => !t.hidden).map(t => t.dataset.tab),
+    sel
+  );
+  return { sel, order };
+}
 
 test('exactly one tab bar is visible at a time', async ({ page }) => {
   const top = await page.locator('.tabs').isVisible();
@@ -26,7 +39,8 @@ test('every tab is wired to its panel', async ({ page }) => {
       };
     })
   );
-  expect(wiring).toHaveLength(8);
+  // Two bars, every tab in each.
+  expect(wiring).toHaveLength(TABS.length * 2);
   for (const w of wiring) {
     expect(w, `tab ${w.tab}`).toMatchObject({ controls: true, isPanel: true, labelled: true });
   }
@@ -52,37 +66,37 @@ test.describe('keyboard navigation', () => {
   const focusedId = page => page.evaluate(() => document.activeElement?.dataset?.tab);
 
   test('arrow keys move through the tablist and wrap', async ({ page }) => {
-    const bar = (await page.locator('.tabs').isVisible()) ? '.tabs' : '.bottom-tabs';
-    await page.click(`${bar} [data-tab="power"]`);
+    const { sel, order } = await visibleBar(page);
+    await page.click(`${sel} [data-tab="${order[0]}"]`);
 
     await page.keyboard.press('ArrowRight');
-    expect(await focusedId(page)).toBe('thermal');
-    await expect(page.locator('#panel-thermal')).toBeVisible();
+    expect(await focusedId(page)).toBe(order[1]);
+    await expect(page.locator(`#panel-${order[1]}`)).toBeVisible();
 
     await page.keyboard.press('ArrowDown');
-    expect(await focusedId(page)).toBe('warp');
+    expect(await focusedId(page)).toBe(order[2]);
 
     await page.keyboard.press('ArrowLeft');
-    expect(await focusedId(page)).toBe('thermal');
+    expect(await focusedId(page)).toBe(order[1]);
 
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
-    expect(await focusedId(page), 'should wrap past the start').toBe('damage');
+    expect(await focusedId(page), 'should wrap past the start').toBe(order.at(-1));
 
     await page.keyboard.press('ArrowRight');
-    expect(await focusedId(page), 'should wrap past the end').toBe('power');
+    expect(await focusedId(page), 'should wrap past the end').toBe(order[0]);
   });
 
   test('Home and End jump to the ends', async ({ page }) => {
-    const bar = (await page.locator('.tabs').isVisible()) ? '.tabs' : '.bottom-tabs';
-    await page.click(`${bar} [data-tab="warp"]`);
+    const { sel, order } = await visibleBar(page);
+    await page.click(`${sel} [data-tab="${order[2]}"]`);
 
     await page.keyboard.press('Home');
-    expect(await focusedId(page)).toBe('power');
+    expect(await focusedId(page)).toBe(order[0]);
 
     await page.keyboard.press('End');
-    expect(await focusedId(page)).toBe('damage');
-    await expect(page.locator('#panel-damage')).toBeVisible();
+    expect(await focusedId(page)).toBe(order.at(-1));
+    await expect(page.locator(`#panel-${order.at(-1)}`)).toBeVisible();
   });
 
   test('roving tabindex leaves one tab stop per bar', async ({ page }) => {
@@ -129,8 +143,8 @@ test('the warp result note is a live region', async ({ page }) => {
 
 test('decorative icons are hidden from assistive tech', async ({ page }) => {
   const svgs = page.locator('.bottom-tabs svg');
-  await expect(svgs).toHaveCount(4);
-  for (let i = 0; i < 4; i++) {
+  await expect(svgs).toHaveCount(TABS.length);
+  for (let i = 0; i < TABS.length; i++) {
     await expect(svgs.nth(i)).toHaveAttribute('aria-hidden', 'true');
   }
 });
