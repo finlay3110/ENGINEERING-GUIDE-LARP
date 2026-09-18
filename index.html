@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Quick-reference tool for UCN engineering officers: power management, thermal limits, warp setups and manual damage control.">
 <title>UCN Engineering Reference Tool</title>
+<meta name="theme-color" content="#0E1626">
 <link rel="icon" href="assets/ucn-logo-white.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -184,7 +187,10 @@
         Repair buttons are hidden because Damage Control is not ticked on the Setup tab.
       </p>
 
-      <h3 class="log-h3">In progress <span class="count-pill" id="activeCount">0</span></h3>
+      <h3 class="log-h3">
+        In progress <span class="count-pill" id="activeCount">0</span>
+        <button type="button" id="completeAllBtn" class="ghost-btn sm" hidden>Complete all</button>
+      </h3>
       <div id="activeList" class="active-list"></div>
 
       <h3 class="log-h3">Logged actions <span class="count-pill" id="loggedCount">0</span></h3>
@@ -342,6 +348,47 @@
     </div>
   </dialog>
 
+  <!-- ============ EDIT ENTRY ============ -->
+  <dialog id="editDialog" class="repair-dialog" aria-labelledby="editDialogTitle">
+    <div class="dialog-head">
+      <h3 id="editDialogTitle">Edit entry</h3>
+      <button type="button" id="editClose" class="mini-btn ghost" aria-label="Close">&times;</button>
+    </div>
+    <p class="dialog-sub" id="editDialogSub"></p>
+    <form id="editForm" novalidate>
+      <div class="field" id="editTargetField">
+        <label for="editTarget">Detail</label>
+        <input type="text" id="editTarget" autocomplete="off">
+      </div>
+      <div class="field" id="editValueField" hidden>
+        <label for="editValue">Hull integrity (%)</label>
+        <input type="number" id="editValue" min="0" max="100" step="1" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="editStart">Started</label>
+        <input type="time" id="editStart" step="1">
+      </div>
+      <div class="field" id="editEndField">
+        <label for="editEnd">Ended</label>
+        <div class="field-row">
+          <input type="time" id="editEnd" step="1">
+          <button type="button" id="editClearEnd" class="ghost-btn">Still running</button>
+        </div>
+      </div>
+      <p class="field-hint">Times are on the day the entry was logged. Leave <strong>Ended</strong> blank for a repair that is still running.</p>
+      <p class="hint" id="editError" role="alert"></p>
+      <div class="dialog-foot">
+        <button type="submit" class="pill-btn solid">Save changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============ UNDO TOAST ============ -->
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden>
+    <span id="toastText"></span>
+    <button type="button" id="toastUndo" class="toast-btn">Undo</button>
+  </div>
+
   <!-- ============ HULL INTEGRITY ============ -->
   <dialog id="hullDialog" class="repair-dialog narrow" aria-labelledby="hullDialogTitle">
     <div class="dialog-head">
@@ -374,6 +421,17 @@
   <p class="disclaimer">This is a fan-made project and is not approved by or affiliated with Bridge Command / The London Space Elevator Limited. All figures are community reference data and are subject to change.</p>
 </div>
 
+<script>
+// Registered inline and outside the module graph so a browser without service
+// worker support (or a page opened over file://) still runs the app normally.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {
+      // Offline support is a bonus; the tool works without it.
+    });
+  });
+}
+</script>
 <script src="js/app.js"></script>
 <!-- A module so its top-level declarations get their own scope. Classic
      scripts share one, and this file needs names app.js already uses.

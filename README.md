@@ -17,7 +17,10 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
   list that ship's locations, and conduits are multi-select because they
   usually drop in groups. Separate one-tap buttons log a power cell swap
   and a hull integrity reading, both of which are moments rather than timed
-  repairs. Running totals for OCP, crystal and conduit repairs and power cell
+  repairs. Running repairs show a live elapsed clock and can be closed
+  individually or all at once; any entry can be edited afterwards, including
+  backdating its times, and a delete can be undone. Running totals for OCP,
+  crystal and conduit repairs and power cell
   swaps, plus spare OCPs counting down from five. Reactor repairs and hull
   readings are recorded in the log and the exports without a counter of their
   own. Hull readings are charted over time — the chart is embedded in the PDF,
@@ -34,6 +37,8 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 
 ```
 index.html               Main page (all six tabs)
+sw.js                    Service worker: offline cache
+manifest.webmanifest     Install metadata (home screen, standalone)
 css/style.css            UCN dark navy theme
 js/app.js                Tab switching, warp calculator, damage control data
 js/mission.js            Setup, action log, JSON export
@@ -43,6 +48,7 @@ fonts/                   Exo 2 + Orbitron (WOFF2, with TTF fallback)
 assets/                  UCN logo
 ship-maps/               HAVOCK_SHIP_MAP.pdf, Takanami_Ship_Map.pdf
 scripts/serve.mjs        Dependency-free static server for local preview
+.github/workflows/       CI: runs the Playwright suite on pull requests
 tests/                   Playwright suite
 playwright.config.mjs    Test config (desktop + phone viewports)
 ```
@@ -88,11 +94,25 @@ URL — a Netlify deploy preview, for instance — instead of starting a local
 server, which is a way to check that what actually shipped behaves like the
 working tree.
 
+## Offline
+
+A service worker precaches the whole tool — shell, fonts, deck maps and the PDF
+library — so after one load it works with no connection at all, including
+exporting a PDF. That matters because it gets used at events, where the network
+is worst exactly when the tool is needed most.
+
+It also ships a web manifest, so it can be installed to a phone's home screen
+and opens full-screen without browser chrome.
+
+Bump `CACHE` in `sw.js` when any precached file changes; the old cache is
+deleted on activation.
+
 ## Mission data
 
 Setup details and the action log are held in `localStorage` on the device that
-recorded them. They are not uploaded anywhere and are not shared between
-devices or browsers. Clearing site data, or the **Clear mission data** button,
+recorded them. The app asks for persistent storage on load, so the browser does
+not silently evict a mission log under storage pressure. Nothing is uploaded
+anywhere, and nothing is shared between devices or browsers. Clearing site data, or the **Clear mission data** button,
 removes them. Export before you finish if you need to keep a mission.
 
 ## Data source

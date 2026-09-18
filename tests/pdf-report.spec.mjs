@@ -129,19 +129,28 @@ test('embeds and uses the house fonts', async ({ page }) => {
 });
 
 // A font that fails to load must cost the typeface, not the export.
-test('still exports when the fonts cannot be fetched', async ({ page }) => {
-  await page.route('**/fonts/*.ttf', route => route.abort());
-  await seedMission(page);
+//
+// The service worker precaches the TTFs, so aborting the request is not enough
+// on its own - it would be served from cache and the fallback never exercised.
+// Blocking the worker for this test isolates the font-fetch failure.
+test.describe('without the service worker', () => {
+  test.use({ serviceWorkers: 'block' });
 
-  const buf = await exportPdf(page);
-  expect(probe(buf).isPdf).toBe(true);
-  expect(probe(buf).pages).toBe(6);
-  await expect(page.locator('#exportNote')).toContainText('PDF exported');
+  test('still exports when the fonts cannot be fetched', async ({ page }) => {
+    await page.goto('/index.html');
+    await page.route("**/fonts/*.ttf", route => route.abort());
+    await seedMission(page);
 
-  // Fell back to a built-in font, which writes literal text rather than
-  // glyph ids.
-  const enc = textEncoding(buf);
-  expect(enc.literal, 'fallback text runs').toBeGreaterThan(20);
+    const buf = await exportPdf(page);
+    expect(probe(buf).isPdf).toBe(true);
+    expect(probe(buf).pages).toBe(6);
+    await expect(page.locator('#exportNote')).toContainText('PDF exported');
+
+    // Fell back to a built-in font, which writes literal text rather than
+    // glyph ids.
+    const enc = textEncoding(buf);
+    expect(enc.literal, 'fallback text runs').toBeGreaterThan(20);
+  });
 });
 
 test.describe('the chart is vector, not a bitmap', () => {

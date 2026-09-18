@@ -204,7 +204,6 @@ test.describe('OCP spares', () => {
   test('deleting an OCP entry returns its spare', async ({ page }) => {
     await startRepair(page, 'ocp');
     await expect(page.locator('#statSpares')).toHaveText('4');
-    page.once('dialog', d => d.accept());
     await page.click('.active-item [data-delete]');
     await expect(page.locator('#statOcp')).toHaveText('0');
     await expect(page.locator('#statSpares')).toHaveText('5');
