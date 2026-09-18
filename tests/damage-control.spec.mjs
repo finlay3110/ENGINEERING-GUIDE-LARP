@@ -54,7 +54,15 @@ test('the map button opens that ship\'s PDF', async ({ page, context }) => {
     const popup = context.waitForEvent('page');
     await page.click('#viewMapBtn');
     const opened = await popup;
-    expect(decodeURIComponent(opened.url())).toContain(file);
+
+    // The page event can fire before the popup's navigation commits, leaving
+    // url() empty for a moment. That is timing-dependent — it never showed up
+    // locally but failed every attempt on a slower CI runner — so poll rather
+    // than read once.
+    await expect
+      .poll(() => decodeURIComponent(opened.url()), { timeout: 10000 })
+      .toContain(file);
+
     await opened.close();
   }
 });
