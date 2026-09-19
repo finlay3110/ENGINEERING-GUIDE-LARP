@@ -161,6 +161,23 @@ const spareMinus = $('spareMinus');
 const sparePlus = $('sparePlus');
 const exportNote = $('exportNote');
 const exportChartBtn = $('exportChartBtn');
+const completeAllBtn = $('completeAllBtn');
+const toast = $('toast');
+const toastText = $('toastText');
+const toastUndo = $('toastUndo');
+const editDialog = $('editDialog');
+const editForm = $('editForm');
+const editDialogSub = $('editDialogSub');
+const editTargetField = $('editTargetField');
+const editTarget = $('editTarget');
+const editValueField = $('editValueField');
+const editValue = $('editValue');
+const editStart = $('editStart');
+const editEndField = $('editEndField');
+const editEnd = $('editEnd');
+const editClearEnd = $('editClearEnd');
+const editError = $('editError');
+const editClose = $('editClose');
 const cellSwapBtn = $('cellSwapBtn');
 const hullBtn = $('hullBtn');
 const hullDialog = $('hullDialog');
@@ -294,12 +311,28 @@ function renderSummary() {
     : 'No mission details yet — fill in the Setup tab.';
 }
 
+/** Whole seconds since an ISO timestamp, never negative. */
+function elapsedSeconds(iso) {
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+}
+
+function formatElapsed(total) {
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
 function renderActive() {
   const rows = activeEntries();
   activeCount.textContent = rows.length;
+  // Closing several repairs one at a time is the usual case after a group of
+  // conduits drops together, so offer it once there is more than one.
+  completeAllBtn.hidden = rows.length < 2;
 
   if (!rows.length) {
     activeList.innerHTML = '<p class="empty">Nothing in progress.</p>';
+    stopElapsedTimer();
     return;
   }
 
@@ -311,12 +344,48 @@ function renderActive() {
         ${e.location ? `<span class="active-loc">${esc(e.location)}</span>` : ''}
       </div>
       <div class="active-side">
-        <span class="active-start">Started ${esc(clockTime(e.startedAt))}</span>
+        <span class="active-elapsed" data-elapsed="${esc(e.startedAt)}"
+              role="timer" aria-label="Time running">${esc(formatElapsed(elapsedSeconds(e.startedAt)))}</span>
+        <span class="active-start">from ${esc(clockTime(e.startedAt))}</span>
         <button type="button" class="pill-btn solid sm" data-complete="${esc(e.id)}">Complete</button>
+        <button type="button" class="mini-btn" data-edit="${esc(e.id)}" aria-label="Edit this entry">Edit</button>
         <button type="button" class="mini-btn ghost" data-delete="${esc(e.id)}" aria-label="Discard this entry">&times;</button>
       </div>
     </div>
   `).join('');
+
+  startElapsedTimer();
+}
+
+// ------------------------------------------------------- elapsed ticking ---
+
+let elapsedTimer = null;
+
+/** Update the running clocks in place. Rewriting the list every second would
+ *  destroy focus and any in-flight tap. */
+function tickElapsed() {
+  const cells = activeList.querySelectorAll('[data-elapsed]');
+  if (!cells.length) {
+    stopElapsedTimer();
+    return;
+  }
+  cells.forEach(cell => {
+    cell.textContent = formatElapsed(elapsedSeconds(cell.dataset.elapsed));
+  });
+}
+
+function startElapsedTimer() {
+  // Only tick while the log is actually on screen: a background tab is
+  // throttled anyway, and re-rendering costs battery for nothing.
+  if (elapsedTimer || document.hidden) return;
+  if (!document.getElementById('panel-log')?.classList.contains('active')) return;
+  elapsedTimer = setInterval(tickElapsed, 1000);
+}
+
+function stopElapsedTimer() {
+  if (!elapsedTimer) return;
+  clearInterval(elapsedTimer);
+  elapsedTimer = null;
 }
 
 /** The human-readable pieces of an entry, in display order. Shared by the log
@@ -359,6 +428,7 @@ function renderLog() {
       <td data-label="Duration">${dur ? esc(dur) : '—'}</td>
       <td data-label="" class="row-tools">
         ${e.endedAt ? '' : `<button type="button" class="mini-btn" data-complete="${esc(e.id)}">End</button>`}
+        <button type="button" class="mini-btn" data-edit="${esc(e.id)}" aria-label="Edit entry">Edit</button>
         <button type="button" class="mini-btn ghost" data-delete="${esc(e.id)}" aria-label="Delete entry">&times;</button>
       </td>
     </tr>`;
@@ -673,8 +743,231 @@ hullForm.addEventListener('submit', e => {
 document.addEventListener('click', e => {
   const done = e.target.closest('[data-complete]');
   if (done) completeEntry(done.dataset.complete);
+
   const del = e.target.closest('[data-delete]');
-  if (del && confirm('Delete this entry?')) deleteEntry(del.dataset.delete);
+  if (del) deleteWithUndo(del.dataset.delete);
+
+  const edit = e.target.closest('[data-edit]');
+  if (edit) openEdit(edit.dataset.edit);
+});
+
+completeAllBtn.addEventListener('click', () => {
+  const running = activeEntries();
+  if (!running.length) return;
+  const at = new Date().toISOString();
+  running.forEach(entry => { entry.endedAt = at; });
+  save();
+  render();
+  note(exportNote, `Completed ${running.length} repairs.`);
+});
+
+// ---------------------------------------------------------------- undo -----
+
+let undoTimer = null;
+let pending = null;
+
+function hideToast() {
+  toast.hidden = true;
+  clearTimeout(undoTimer);
+  undoTimer = null;
+  pending = null;
+}
+
+/**
+ * Delete straight away and offer an undo, rather than asking first.
+ *
+ * A confirm dialog mid-mission gets dismissed on reflex and protects nobody;
+ * an undo costs one tap only when the delete was actually wrong.
+ */
+function deleteWithUndo(id) {
+  const index = state.entries.findIndex(e => e.id === id);
+  if (index === -1) return;
+
+  const entry = state.entries[index];
+  pending = { entry, index, spare: entry.kind === 'ocp' };
+
+  state.entries.splice(index, 1);
+  if (pending.spare) state.spares = Math.min(99, state.spares + 1);
+  save();
+  render();
+
+  toastText.textContent = `${KINDS[entry.kind]?.label || entry.kind} deleted.`;
+  toast.hidden = false;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideToast, 9000);
+}
+
+toastUndo.addEventListener('click', () => {
+  if (!pending) return;
+  // Back to where it was, so the log does not reshuffle on undo.
+  state.entries.splice(Math.min(pending.index, state.entries.length), 0, pending.entry);
+  if (pending.spare) state.spares = Math.max(0, state.spares - 1);
+  save();
+  render();
+  hideToast();
+});
+
+// ---------------------------------------------------------------- edit -----
+
+let editingId = null;
+
+/** "HH:MM:SS" for a time input. */
+function toTimeInput(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/** Apply a "HH:MM[:SS]" wall time to the date the entry already carries, so
+ *  correcting a time never silently moves the entry to today. */
+function withTime(iso, value) {
+  const [h, m, s] = value.split(':').map(Number);
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime()) || Number.isNaN(h) || Number.isNaN(m)) return null;
+  d.setHours(h, m, Number.isFinite(s) ? s : 0, 0);
+  return d.toISOString();
+}
+
+function openEdit(id) {
+  const entry = state.entries.find(e => e.id === id);
+  if (!entry) return;
+  editingId = id;
+  editError.textContent = '';
+
+  const meta = KINDS[entry.kind] || {};
+  editDialogSub.textContent = `${meta.label || entry.kind} — logged ${fullTime(entry.startedAt)}`;
+
+  const isHull = entry.kind === 'hull';
+  const isNote = entry.kind === 'note';
+  editValueField.hidden = !isHull;
+  editTargetField.hidden = isHull;
+  // An instant event has no separate end to correct.
+  editEndField.hidden = !!meta.instant;
+
+  editTarget.value = isNote ? (entry.note || '') : (entry.target || '');
+  editTarget.previousElementSibling.textContent = isNote ? 'Note' : 'Detail';
+  editValue.value = isHull && typeof entry.value === 'number' ? entry.value : '';
+  editStart.value = toTimeInput(entry.startedAt);
+  editEnd.value = entry.endedAt ? toTimeInput(entry.endedAt) : '';
+
+  if (typeof editDialog.showModal === 'function') editDialog.showModal();
+  else editDialog.setAttribute('open', '');
+}
+
+function closeEdit() {
+  editingId = null;
+  if (typeof editDialog.close === 'function') editDialog.close();
+  else editDialog.removeAttribute('open');
+}
+
+editClose.addEventListener('click', closeEdit);
+editClearEnd.addEventListener('click', () => { editEnd.value = ''; });
+
+editForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const entry = state.entries.find(en => en.id === editingId);
+  if (!entry) return closeEdit();
+
+  const meta = KINDS[entry.kind] || {};
+
+  if (!editStart.value) {
+    editError.textContent = 'A start time is required.';
+    return;
+  }
+  const startedAt = withTime(entry.startedAt, editStart.value);
+  if (!startedAt) {
+    editError.textContent = 'That start time could not be read.';
+    return;
+  }
+
+  let endedAt = null;
+  if (meta.instant) {
+    // Instant events keep start and end together by definition.
+    endedAt = startedAt;
+  } else if (editEnd.value) {
+    endedAt = withTime(entry.endedAt || entry.startedAt, editEnd.value);
+    if (!endedAt) {
+      editError.textContent = 'That end time could not be read.';
+      return;
+    }
+    if (new Date(endedAt) < new Date(startedAt)) {
+      editError.textContent = 'The repair cannot end before it started.';
+      return;
+    }
+  }
+
+  if (entry.kind === 'hull') {
+    const n = Number(editValue.value);
+    if (editValue.value === '' || !Number.isFinite(n) || n < 0 || n > 100) {
+      editError.textContent = 'Hull integrity is a percentage from 0 to 100.';
+      return;
+    }
+    entry.value = Math.round(n);
+  } else if (entry.kind === 'note') {
+    entry.note = editTarget.value.trim();
+  } else {
+    entry.target = editTarget.value.trim();
+  }
+
+  entry.startedAt = startedAt;
+  entry.endedAt = endedAt;
+
+  save();
+  render();
+  closeEdit();
+  note(exportNote, 'Entry updated.');
+});
+
+// ------------------------------------------------------------ wake lock ----
+
+let wakeLock = null;
+
+/**
+ * Keep the screen on while the log is open.
+ *
+ * Repairs are timed against this screen, and a phone locking mid-repair means
+ * unlocking it in a dark, busy compartment. The lock is dropped whenever the
+ * log is not the visible panel so it never holds the screen awake pointlessly.
+ */
+async function updateWakeLock() {
+  const wanted = !document.hidden &&
+    document.getElementById('panel-log')?.classList.contains('active');
+
+  if (!wanted) {
+    if (wakeLock) {
+      try { await wakeLock.release(); } catch { /* already gone */ }
+      wakeLock = null;
+    }
+    return;
+  }
+
+  if (wakeLock || !('wakeLock' in navigator)) return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    // The system drops the lock on its own when the page is hidden; clear the
+    // handle so the next visit re-requests instead of assuming it still holds.
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch {
+    // Refused, unsupported, or the battery saver says no.
+    wakeLock = null;
+  }
+}
+
+/** The log tab becoming visible drives both the ticking clock and the lock. */
+function onLogVisibilityChanged() {
+  if (document.getElementById('panel-log')?.classList.contains('active') && !document.hidden) {
+    tickElapsed();
+    startElapsedTimer();
+  } else {
+    stopElapsedTimer();
+  }
+  updateWakeLock();
+}
+
+document.addEventListener('visibilitychange', onLogVisibilityChanged);
+document.querySelectorAll('[role="tab"]').forEach(tab => {
+  tab.addEventListener('click', onLogVisibilityChanged);
+  tab.addEventListener('keydown', () => setTimeout(onLogVisibilityChanged, 0));
 });
 
 spareMinus.addEventListener('click', () => {
@@ -1012,9 +1305,31 @@ $('exportPdfBtn').addEventListener('click', async () => {
   }
 });
 
+// -------------------------------------------------------------- storage ----
+
+/**
+ * Ask the browser not to evict this origin's data.
+ *
+ * Without this, localStorage is "best effort": a browser under storage
+ * pressure can clear it with no warning and no recovery, which for this tool
+ * means losing a mission log part-way through an event. The request is
+ * granted silently on an installed app and is harmless when refused.
+ */
+async function requestPersistentStorage() {
+  try {
+    if (!navigator.storage?.persist) return;
+    if (await navigator.storage.persisted()) return;
+    await navigator.storage.persist();
+  } catch {
+    // Unsupported or blocked. The log still works, it is just evictable.
+  }
+}
+
 // ----------------------------------------------------------------- init ----
 
 load();
 fillSetupForm();
 setShip(state.ship);
 render();
+requestPersistentStorage();
+onLogVisibilityChanged();

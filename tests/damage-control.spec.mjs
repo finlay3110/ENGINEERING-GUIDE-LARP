@@ -45,17 +45,40 @@ test('the crystal charger note is shown for both ships', async ({ page }) => {
   }
 });
 
-test('the map button opens that ship\'s PDF', async ({ page, context }) => {
-  for (const [ship, file] of [
-    ['havock', 'HAVOCK_SHIP_MAP.pdf'],
-    ['takanami', 'Takanami_Ship_Map.pdf'],
-  ]) {
+/**
+ * What the button does is call window.open with the right file; how the
+ * browser then treats a PDF is not the app's business and is not consistent.
+ * Full Chromium renders it in the popup, so the popup's URL becomes the PDF's.
+ * The headless shell — which is what CI runs — has no PDF viewer, so it
+ * downloads the file instead and the popup's URL stays empty forever.
+ *
+ * Recording the call keeps the assertion on the app's actual contract, and
+ * covers the noopener that a URL check never could. That the files exist and
+ * are served is the next test's job.
+ */
+test('the map button opens that ship\'s PDF', async ({ page }) => {
+  await page.evaluate(() => {
+    window.__openCalls = [];
+    window.open = (url, target, features) => {
+      window.__openCalls.push({ url, target, features });
+      return null;
+    };
+  });
+
+  for (const ship of ['havock', 'takanami']) {
     await page.selectOption('#shipSelect', ship);
-    const popup = context.waitForEvent('page');
     await page.click('#viewMapBtn');
-    const opened = await popup;
-    expect(decodeURIComponent(opened.url())).toContain(file);
-    await opened.close();
+  }
+
+  const calls = await page.evaluate(() => window.__openCalls);
+  expect(calls).toHaveLength(2);
+
+  expect(decodeURIComponent(calls[0].url)).toContain('HAVOCK_SHIP_MAP.pdf');
+  expect(decodeURIComponent(calls[1].url)).toContain('Takanami_Ship_Map.pdf');
+
+  for (const call of calls) {
+    expect(call.target).toBe('_blank');
+    expect(call.features).toContain('noopener');
   }
 });
 
