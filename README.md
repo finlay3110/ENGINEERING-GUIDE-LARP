@@ -89,7 +89,11 @@ BASE_URL=https://example.netlify.app npm test   # test a deployed site
 ```
 
 `CHROMIUM_PATH` skips Playwright's browser-revision check, for environments
-that ship their own Chromium. `BASE_URL` runs the tests against a deployed
+that ship their own Chromium. Worth knowing: CI runs the **headless shell**
+build, which behaves differently from full Chromium in at least one way that
+matters — it has no PDF viewer, so opening a PDF downloads it rather than
+navigating to it. If a test passes locally and fails in CI, try pointing
+`CHROMIUM_PATH` at a `headless_shell` binary before looking anywhere else. `BASE_URL` runs the tests against a deployed
 URL — a Netlify deploy preview, for instance — instead of starting a local
 server, which is a way to check that what actually shipped behaves like the
 working tree.
