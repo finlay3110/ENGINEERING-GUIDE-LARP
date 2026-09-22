@@ -45,6 +45,59 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+// ------------------------------------------------------- canon operations --
+
+// Named missions with a known type, the way a player would recognise
+// "OPERATION TEDDER" as Military on sight. Typing or picking one of these
+// exactly (matching is case-insensitive) tells Setup what kind of mission it
+// is; anything else typed into Mission Name is simply an ordinary free-text
+// name - this list is a convenience layered on top of free text, never a
+// restriction on it.
+const OPERATIONS = [
+  ['OPERATION TEDDER', 'Military'],
+  ['ITHAKA MINING FACILITY', 'Military'],
+  ['OPERATION ALCHEMIST', 'Military'],
+  ['OPERATION CLAYMORE', 'Military'],
+  ['OPERATION COPIAPO', 'Military'],
+  ['OPERATION HANUMAN', 'Military'],
+  ['OPERATION MENDICANT', 'Military'],
+  ['OPERATION QUICKSTEP', 'Military'],
+  ['OPERATION SILK ROAD', 'Military'],
+  ['OPERATION TECUMSEH', 'Military'],
+  ['OPERATION VIA MARIS', 'Military'],
+  ['OPERATION AMUNDSEN', 'Exploration'],
+  ['OPERATION OBELISK', 'Exploration'],
+  ['OPERATION SARGASSO', 'Exploration'],
+  ['OPERATION ADAMAN', 'Exploration'],
+  ['OPERATION MARCONI', 'Exploration'],
+  ['OPERATION SISTEMA', 'Exploration'],
+  ['OPERATION VANGUARD', 'Exploration'],
+  ['OPERATION REDENTOR', 'Diplomacy'],
+  ['OPERATION BARATARIA', 'Diplomacy'],
+  ['OPERATION CLARITY', 'Diplomacy'],
+  ['OPERATION KISMET', 'Diplomacy'],
+  ['OPERATION PHILBY', 'Diplomacy'],
+  ['OPERATION PITCHFORK', 'Diplomacy'],
+  ['TERRA NOVAN DIPLOMATIC INCIDENT', 'Diplomacy'],
+  ['OPERATION ANTIMONY', 'Intrigue'],
+  ['OPERATION CAMINO', 'Intrigue'],
+  ['OPERATION EURYDICE', 'Intrigue'],
+  ['OPERATION MOCKINGBIRD', 'Intrigue'],
+  ['OPERATION TELEGRAM', 'Intrigue'],
+  ['OPERATION ARGUS', 'Intrigue'],
+  ['OPERATION RECOIL', 'Intrigue'],
+];
+
+const OPERATION_TYPE_BY_NAME = new Map(
+  OPERATIONS.map(([name, type]) => [name.toUpperCase(), type])
+);
+
+/** The canon type for a mission name, or null when it isn't a listed
+ *  operation - the ordinary case for a free-text mission name. */
+function operationType(name) {
+  return OPERATION_TYPE_BY_NAME.get(String(name || '').trim().toUpperCase()) || null;
+}
+
 // ---------------------------------------------------------------- state ----
 
 function blankState() {
@@ -208,8 +261,19 @@ const opName = $('opName');
 const opRank = $('opRank');
 const missionStart = $('missionStart');
 const missionName = $('missionName');
+const operationNamesList = $('operationNames');
+const operationHint = $('operationHint');
+const operationHintText = $('operationHintText');
+const operationHintApply = $('operationHintApply');
 const missionType = $('missionType');
 const setupShip = $('setupShip');
+
+// Populated once from OPERATIONS - the single source of truth the hint logic
+// below also reads from, so the suggestions offered while typing can never
+// drift from the names that are actually recognised.
+operationNamesList.innerHTML = OPERATIONS
+  .map(([name]) => `<option value="${esc(name)}"></option>`)
+  .join('');
 const modPower = $('modPower');
 const modDamage = $('modDamage');
 const nowBtn = $('nowBtn');
@@ -582,6 +646,47 @@ function setMissionType(value) {
   missionType.value = value;
 }
 
+/**
+ * Recognise a canon operation name in Mission Name and surface its type.
+ *
+ * Only fills Mission Type in when it is currently blank - once it holds any
+ * value, whether set by hand a moment ago or by this function, typing never
+ * silently overwrites it again, so a value the user can already see on
+ * screen is never changed without their say-so. When the name matches a
+ * known operation but the type disagrees, a one-click "Use X" makes the
+ * canon type a tap away instead of forcing it.
+ */
+function updateOperationHint() {
+  const matched = operationType(missionName.value);
+
+  if (!matched) {
+    operationHint.hidden = true;
+    return;
+  }
+
+  if (!missionType.value) setMissionType(matched);
+
+  const inSync = missionType.value === matched;
+  operationHint.hidden = false;
+  operationHint.classList.toggle('is-matched', inSync);
+  operationHint.classList.toggle('is-mismatch', !inSync);
+  operationHintApply.hidden = inSync;
+
+  if (inSync) {
+    operationHintText.textContent = `Known operation — ${matched}.`;
+  } else {
+    operationHintText.textContent = `Known operation — canon type is ${matched}.`;
+    operationHintApply.textContent = `Use ${matched}`;
+  }
+}
+
+operationHintApply.addEventListener('click', () => {
+  const matched = operationType(missionName.value);
+  if (!matched) return;
+  setMissionType(matched);
+  readSetupForm();
+});
+
 function fillSetupForm() {
   opName.value = state.operator.name;
   opRank.value = state.operator.rank;
@@ -591,12 +696,14 @@ function fillSetupForm() {
   setupShip.value = state.ship;
   modPower.checked = state.modules.power;
   modDamage.checked = state.modules.damage;
+  updateOperationHint();
 }
 
 function readSetupForm() {
   state.operator.name = opName.value.trim();
   state.operator.rank = opRank.value.trim();
   state.mission.name = missionName.value.trim();
+  updateOperationHint(); // may fill a blank Mission Type from a known name
   state.mission.type = missionType.value.trim();
   // datetime-local has no zone; treat what was typed as local wall time.
   state.mission.startedAt = missionStart.value

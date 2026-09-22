@@ -109,7 +109,16 @@
           </div>
           <div class="field">
             <label for="missionName">Mission name</label>
-            <input type="text" id="missionName" name="missionName" placeholder="e.g. Kestrel Relief">
+            <!-- The datalist offers known operations but never restricts input -
+                 anything typed that isn't on the list is just an ordinary free-text
+                 mission name. autocomplete="off" so the browser's own form-fill
+                 memory doesn't compete with the datalist suggestions. -->
+            <input type="text" id="missionName" name="missionName" list="operationNames" autocomplete="off" placeholder="e.g. Kestrel Relief, or a listed operation">
+            <datalist id="operationNames"></datalist>
+            <div class="op-hint" id="operationHint" hidden>
+              <span id="operationHintText"></span>
+              <button type="button" id="operationHintApply" class="mini-btn" hidden></button>
+            </div>
           </div>
           <div class="field">
             <label for="missionType">Mission type</label>
