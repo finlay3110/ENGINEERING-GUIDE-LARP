@@ -7,11 +7,16 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 ## Features
 
 - **Setup** — name, rank, date and time, mission name, mission type and ship,
-  plus a checkbox per section. Power Management shows the power, thermal and
-  warp tabs; Damage Control shows the damage tab and the repair buttons on the
-  log. Setup and the Action Log are always available. **New mission** clears
-  the mission and its log but keeps the operator and their settings, ready for
-  the next watch; **Clear mission data** wipes everything.
+  plus a checkbox per section. Rank is a fixed dropdown, Cadet through Admiral
+  of the Fleet. Mission name offers known canon operations as
+  you type (still ordinary free text otherwise) and recognising one fills in
+  its mission type automatically — never overwriting a type you have already
+  set, and always offering a one-tap "Use X" if the two disagree. Power
+  Management shows the power, thermal and warp tabs; Damage Control shows the
+  damage tab and the repair buttons on the log. Setup and the Action Log are
+  always available. **New mission** clears the mission and its log but keeps
+  the operator and their settings, ready for the next watch; **Clear mission
+  data** wipes everything.
 - **Action Log** — records manual repairs with a start and end time. Manual
   repair leads to OCP, crystals, conduits or reactor; OCP and crystals then
   list that ship's locations, and conduits are multi-select because they

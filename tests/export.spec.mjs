@@ -6,7 +6,7 @@ import { openTab } from './helpers.mjs';
 async function seedMission(page) {
   await page.goto('/index.html');
   await page.fill('#opName', 'Fin');
-  await page.fill('#opRank', 'Lt');
+  await page.selectOption('#opRank', 'Lieutenant');
   await page.fill('#missionName', 'Kestrel Relief');
   await page.selectOption('#missionType', 'Frontline');
   await page.click('#nowBtn');
@@ -42,7 +42,7 @@ test('JSON export carries the whole mission', async ({ page }) => {
 
   expect(name).toMatch(/^ucn-log-kestrel-relief.*\.json$/);
   expect(data.schema).toBe('ucn.engineering.log/1');
-  expect(data.operator).toMatchObject({ name: 'Fin', rank: 'Lt' });
+  expect(data.operator).toMatchObject({ name: 'Fin', rank: 'Lieutenant' });
   expect(data.mission).toMatchObject({ name: 'Kestrel Relief', type: 'Frontline' });
   expect(data.ship).toMatchObject({ id: 'havock', name: 'UCS Havock' });
   expect(data.entries).toHaveLength(3);

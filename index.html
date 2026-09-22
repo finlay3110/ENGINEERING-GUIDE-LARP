@@ -28,6 +28,21 @@
     <a class="pill-btn" href="https://toolportal.netlify.app">&larr; Back to Tool Portal</a>
   </header>
 
+  <!-- ============ STORAGE HEALTH BANNER ============ -->
+  <!-- In the page flow rather than a fixed toast, and outside .panels, so it
+       is visible no matter which tab is open - the whole point is that saving
+       can fail while the user is on the Log tab, which is where they spend
+       most of a mission, and a warning buried on the Setup tab is as good as
+       no warning at all. -->
+  <div id="storageBanner" class="storage-banner" role="alert" hidden>
+    <p id="storageBannerText"></p>
+    <div class="storage-banner-actions">
+      <button type="button" id="storageBannerExport" class="pill-btn solid sm">Export JSON now</button>
+      <button type="button" id="storageBannerReload" class="ghost-btn sm" hidden>Reload this tab</button>
+      <button type="button" id="storageBannerDismiss" class="mini-btn ghost" aria-label="Dismiss">&times;</button>
+    </div>
+  </div>
+
   <!-- ============ TABS (desktop/tablet, top) ============ -->
   <!-- data-module marks tabs that Setup shows or hides. Untagged tabs are
        always available. -->
@@ -83,7 +98,21 @@
           </div>
           <div class="field">
             <label for="opRank">Rank</label>
-            <input type="text" id="opRank" name="opRank" placeholder="e.g. Lt">
+            <select id="opRank" name="opRank">
+              <option value="">Not set</option>
+              <option value="Cadet">Cadet</option>
+              <option value="Ensign">Ensign</option>
+              <option value="Sub Lt">Sub Lt</option>
+              <option value="Lieutenant">Lieutenant</option>
+              <option value="Lt Cmdr">Lt Cmdr</option>
+              <option value="Commander">Commander</option>
+              <option value="Captain">Captain</option>
+              <option value="Commodore">Commodore</option>
+              <option value="Rear Admiral">Rear Admiral</option>
+              <option value="Vice Admiral">Vice Admiral</option>
+              <option value="Admiral">Admiral</option>
+              <option value="Admiral of the Fleet">Admiral of the Fleet</option>
+            </select>
           </div>
           <div class="field">
             <label for="missionStart">Date and time</label>
@@ -94,7 +123,16 @@
           </div>
           <div class="field">
             <label for="missionName">Mission name</label>
-            <input type="text" id="missionName" name="missionName" placeholder="e.g. Kestrel Relief">
+            <!-- The datalist offers known operations but never restricts input -
+                 anything typed that isn't on the list is just an ordinary free-text
+                 mission name. autocomplete="off" so the browser's own form-fill
+                 memory doesn't compete with the datalist suggestions. -->
+            <input type="text" id="missionName" name="missionName" list="operationNames" autocomplete="off" placeholder="e.g. Kestrel Relief, or a listed operation">
+            <datalist id="operationNames"></datalist>
+            <div class="op-hint" id="operationHint" hidden>
+              <span id="operationHintText"></span>
+              <button type="button" id="operationHintApply" class="mini-btn" hidden></button>
+            </div>
           </div>
           <div class="field">
             <label for="missionType">Mission type</label>

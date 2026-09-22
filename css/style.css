@@ -505,6 +505,22 @@ html,body{
 .field select:focus{border-color:var(--cyan);}
 .field-row{display:flex; gap:8px; align-items:center;}
 .field-row input{flex:1; min-width:0;}
+
+.op-hint{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  font-size:11.5px;
+  line-height:1.4;
+  color:var(--muted);
+}
+/* Type already matches the canon operation - a quiet confirmation. */
+.op-hint.is-matched{color:var(--cyan);}
+/* Type is set to something other than canon - the "Use X" button next to
+   this text is what fixes it; typing alone never overwrites a value the
+   user can already see is set. */
+.op-hint.is-mismatch{color:var(--amber);}
 .field-hint{
   font-size:12px;
   color:var(--muted);
@@ -872,4 +888,41 @@ td.empty{text-align:center;}
   /* Clear of the fixed bottom tab bar. */
   .toast{bottom:calc(84px + env(safe-area-inset-bottom));}
   .active-elapsed{text-align:left;}
+}
+
+/* ---------- storage health banner ---------- */
+/* In-flow (not fixed), so it pushes content down and cannot be missed the
+   way a floating toast could be, and it is outside .panels so it stays
+   visible across every tab. Danger-coloured because a save failure is
+   ongoing data loss, not a transient notice. */
+.storage-banner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  background:rgba(238,123,123,0.12);
+  border:1.4px solid var(--danger);
+  border-radius:10px;
+  padding:12px 16px;
+  margin-bottom:4px;
+}
+.storage-banner p{
+  margin:0;
+  font-size:13px;
+  color:var(--text);
+  font-weight:700;
+  flex:1;
+  min-width:200px;
+}
+.storage-banner-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+@media (max-width:700px){
+  .storage-banner{flex-direction:column; align-items:stretch;}
+  .storage-banner-actions{justify-content:flex-end;}
 }
