@@ -873,3 +873,40 @@ td.empty{text-align:center;}
   .toast{bottom:calc(84px + env(safe-area-inset-bottom));}
   .active-elapsed{text-align:left;}
 }
+
+/* ---------- storage health banner ---------- */
+/* In-flow (not fixed), so it pushes content down and cannot be missed the
+   way a floating toast could be, and it is outside .panels so it stays
+   visible across every tab. Danger-coloured because a save failure is
+   ongoing data loss, not a transient notice. */
+.storage-banner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  background:rgba(238,123,123,0.12);
+  border:1.4px solid var(--danger);
+  border-radius:10px;
+  padding:12px 16px;
+  margin-bottom:4px;
+}
+.storage-banner p{
+  margin:0;
+  font-size:13px;
+  color:var(--text);
+  font-weight:700;
+  flex:1;
+  min-width:200px;
+}
+.storage-banner-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+@media (max-width:700px){
+  .storage-banner{flex-direction:column; align-items:stretch;}
+  .storage-banner-actions{justify-content:flex-end;}
+}

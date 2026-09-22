@@ -10,6 +10,14 @@
 const { SHIP_DATA, activateTab, setModuleVisibility, setShip } = window.UCN;
 
 const STORE_KEY = 'ucn-mission-v1';
+// A second, independently-written copy of the same state. localStorage writes
+// are not guaranteed atomic against an interrupted flush (an app killed by
+// the OS mid-write, on a phone, is exactly the kind of interruption this tool
+// has to survive), so a single corrupted key would otherwise mean load()
+// silently resetting to blank with no way back. The backup lags the primary
+// by nothing under normal operation - both are written every save() - but a
+// torn write is very unlikely to hit both keys at once.
+const BACKUP_KEY = STORE_KEY + '-backup';
 const SCHEMA = 'ucn.engineering.log/1';
 const DEFAULT_SPARES = 5;
 
@@ -53,14 +61,14 @@ function blankState() {
 
 let state = blankState();
 
-function load() {
-  // Storage can throw outright in private modes and embedded webviews, so a
-  // failure here has to leave the app usable rather than blank.
+/** Parse a stored value, returning null for "nothing there" as well as for
+ *  "there but unreadable" - the caller tells those apart by checking `raw`
+ *  itself, since which one it is changes what the user should be told. */
+function tryParse(raw) {
+  if (!raw) return null;
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return;
     const saved = JSON.parse(raw);
-    state = {
+    return {
       ...blankState(),
       ...saved,
       operator: { ...blankState().operator, ...saved.operator },
@@ -69,8 +77,45 @@ function load() {
       entries: Array.isArray(saved.entries) ? saved.entries.map(migrate) : [],
     };
   } catch {
-    state = blankState();
+    return null;
   }
+}
+
+function load() {
+  // Storage can throw outright in private modes and embedded webviews, so a
+  // failure here has to leave the app usable rather than blank.
+  let primaryRaw = null;
+  try {
+    primaryRaw = localStorage.getItem(STORE_KEY);
+    const parsed = tryParse(primaryRaw);
+    if (parsed) { state = parsed; return; }
+  } catch {
+    // Reading itself threw; fall through to the backup exactly as if the
+    // primary had been unparseable.
+  }
+
+  // The primary key existed but did not parse (or reading it threw) - this is
+  // corruption, most likely a write interrupted by the app or OS, not "never
+  // used before". Try the backup before giving up on the mission entirely.
+  if (primaryRaw) {
+    let backupRaw = null;
+    try { backupRaw = localStorage.getItem(BACKUP_KEY); } catch { /* also gone */ }
+    const fromBackup = tryParse(backupRaw);
+    if (fromBackup) {
+      state = fromBackup;
+      pendingStorageNotice = {
+        kind: 'recovered',
+        message: 'The saved mission was unreadable and has been restored from a backup — check the log looks right.',
+      };
+      return;
+    }
+    pendingStorageNotice = {
+      kind: 'corrupted',
+      message: 'The saved mission was unreadable and no backup could be recovered. Starting a blank mission.',
+    };
+  }
+
+  state = blankState();
 }
 
 /** Bring a stored entry up to the current shape. The swap action shipped
@@ -82,14 +127,40 @@ function migrate(entry) {
   return entry;
 }
 
+// A notice discovered during load(), before the DOM/banner exist yet. Flushed
+// once init wires up the banner element.
+let pendingStorageNotice = null;
+
 function save() {
+  const json = JSON.stringify(state);
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORE_KEY, json);
   } catch {
-    // Out of quota or storage denied. The in-memory log still works for this
-    // session; say so once rather than failing silently on every keystroke.
-    note(setupSaved, 'Could not save to this device — the log will be lost if you reload.');
+    // Out of quota, storage denied (Safari Private Browsing caps it at zero),
+    // or a managed device locking it down. The in-memory session still works,
+    // but nothing here survives a reload - and this can keep failing on every
+    // single keystroke, so a banner that stays up (rather than the old
+    // approach of a message on the Setup tab, invisible from every other tab)
+    // is the only honest way to tell the user before they lose real work.
+    showStorageBanner(
+      'write-failure',
+      'Not saving to this device — your changes will be lost if you reload or close this tab. Export now to keep them.'
+    );
+    return;
   }
+  // Mirror to the backup key. A failure here does not block the primary save
+  // - the backup is a bonus, not a requirement - but it is worth knowing
+  // about if it keeps happening, since it means recovery from corruption
+  // would not be possible either.
+  try {
+    localStorage.setItem(BACKUP_KEY, json);
+  } catch { /* primary save already succeeded; backup is best-effort */ }
+
+  // Only clears a write-failure notice. A cross-tab warning or a
+  // just-recovered-from-corruption notice is not resolved by this save
+  // succeeding - if anything, writing now is the moment most likely to
+  // silently overwrite whatever another tab has, so it stays up.
+  hideStorageBanner('write-failure');
 }
 
 // ---------------------------------------------------------------- time -----
@@ -146,6 +217,12 @@ const newMissionBtn = $('newMissionBtn');
 const clearSessionBtn = $('clearSessionBtn');
 const setupSaved = $('setupSaved');
 
+const storageBanner = $('storageBanner');
+const storageBannerText = $('storageBannerText');
+const storageBannerExport = $('storageBannerExport');
+const storageBannerReload = $('storageBannerReload');
+const storageBannerDismiss = $('storageBannerDismiss');
+
 const logSummary = $('logSummary');
 const damageActions = $('damageActions');
 const damageDisabledNote = $('damageDisabledNote');
@@ -196,13 +273,54 @@ const dialogBack = $('dialogBack');
 const dialogClose = $('dialogClose');
 const dialogConfirm = $('dialogConfirm');
 
-let noteTimer;
+// One timeout per element rather than one shared variable, so a note() call
+// on, say, exportNote cannot cancel-and-replace the pending clear for an
+// unrelated element like setupSaved - the earlier text would otherwise either
+// vanish early or, worse, hang around forever once the shared timer had been
+// retargeted at someone else.
+const noteTimers = new WeakMap();
 function note(el, message) {
   if (!el) return;
   el.textContent = message;
-  clearTimeout(noteTimer);
-  if (message) noteTimer = setTimeout(() => { el.textContent = ''; }, 4000);
+  clearTimeout(noteTimers.get(el));
+  if (message) noteTimers.set(el, setTimeout(() => { el.textContent = ''; }, 4000));
 }
+
+// ------------------------------------------------------ storage health -----
+
+// Which kind of problem the banner is currently showing, if any, and which
+// kind the user last dismissed - so a fresh failure of the SAME kind that
+// keeps recurring (e.g. every keystroke while storage is unwritable) does not
+// fight a dismissal the user already made, but a genuinely different problem
+// still gets through.
+let bannerKind = null;
+let bannerDismissedKind = null;
+
+function showStorageBanner(kind, message, { reload = false } = {}) {
+  bannerKind = kind;
+  if (bannerDismissedKind === kind) return;
+  storageBannerText.textContent = message;
+  storageBannerReload.hidden = !reload;
+  storageBanner.hidden = false;
+}
+
+/** Clear the banner, but only if it is currently showing `onlyKind` - so, for
+ *  instance, a write succeeding can retire a "not saving" notice without also
+ *  swallowing an unrelated cross-tab warning that happens to be showing. */
+function hideStorageBanner(onlyKind) {
+  if (onlyKind && bannerKind !== onlyKind) return;
+  storageBanner.hidden = true;
+  bannerKind = null;
+  bannerDismissedKind = null;
+}
+
+storageBannerDismiss.addEventListener('click', () => {
+  bannerDismissedKind = bannerKind;
+  storageBanner.hidden = true;
+});
+
+storageBannerExport.addEventListener('click', () => exportJsonNow());
+storageBannerReload.addEventListener('click', () => location.reload());
 
 // ---------------------------------------------------------- ship targets ---
 
@@ -533,7 +651,13 @@ clearSessionBtn.addEventListener('click', () => {
     : 'Clear all mission details?';
   if (!confirm(warning)) return;
   state = blankState();
-  try { localStorage.removeItem(STORE_KEY); } catch { /* nothing to clean up */ }
+  try {
+    localStorage.removeItem(STORE_KEY);
+    // Otherwise a stale backup could resurrect the cleared mission the next
+    // time the primary write happens to fail and load() falls back to it.
+    localStorage.removeItem(BACKUP_KEY);
+  } catch { /* nothing to clean up */ }
+  hideStorageBanner();
   fillSetupForm();
   setShip(state.ship);
   render();
@@ -1200,11 +1324,17 @@ exportChartBtn.addEventListener('click', () => {
   }, 'image/png');
 });
 
-$('exportJsonBtn').addEventListener('click', () => {
+// Named rather than inline so the storage-health banner's "Export now" button
+// can trigger the exact same export - the one moment a user most needs it is
+// while storage is failing, and that shortcut has to do precisely what the
+// regular button does.
+function exportJsonNow() {
   const blob = new Blob([JSON.stringify(exportPayload(), null, 2)], { type: 'application/json' });
   download(blob, `${fileStem()}.json`);
   note(exportNote, 'JSON exported.');
-});
+}
+
+$('exportJsonBtn').addEventListener('click', exportJsonNow);
 
 // jsPDF is 360KB, and most sessions never export, so it is only fetched when
 // the button is actually pressed.
@@ -1325,6 +1455,32 @@ async function requestPersistentStorage() {
   }
 }
 
+// ------------------------------------------------------- cross-tab watch ---
+
+/**
+ * Warn when another tab or window writes to the same mission.
+ *
+ * localStorage has no built-in sync between contexts: this tool now installs
+ * as a home-screen app, and an installed app plus a leftover browser tab are
+ * two independent instances of the same origin, each with its own in-memory
+ * `state`, each happily calling save() on its own schedule. Without this,
+ * whichever one saves last silently wins and the other's edits are gone with
+ * no error, no warning - which is exactly the failure mode this exists to
+ * catch. The storage event only ever fires in the OTHER context, never the
+ * one that made the write, so this can never trigger on our own saves.
+ */
+window.addEventListener('storage', e => {
+  if (e.key !== STORE_KEY) return;
+  // Ignore a write that happens to match what we already have - most likely
+  // another tab loading the same untouched mission, not a real divergence.
+  if (e.newValue === JSON.stringify(state)) return;
+  showStorageBanner(
+    'cross-tab',
+    'This mission changed in another tab or window. Reload to see the latest — further changes here may overwrite it.',
+    { reload: true }
+  );
+});
+
 // ----------------------------------------------------------------- init ----
 
 load();
@@ -1333,3 +1489,9 @@ setShip(state.ship);
 render();
 requestPersistentStorage();
 onLogVisibilityChanged();
+
+// Surface anything load() found on the way in, now that the banner exists.
+if (pendingStorageNotice) {
+  showStorageBanner(pendingStorageNotice.kind, pendingStorageNotice.message);
+  pendingStorageNotice = null;
+}
