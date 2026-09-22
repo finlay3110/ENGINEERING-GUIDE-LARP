@@ -15,14 +15,14 @@ test('setup is the first tab and opens by default', async ({ page }) => {
 
 test('mission details reach the log summary', async ({ page }) => {
   await page.fill('#opName', 'Fin');
-  await page.fill('#opRank', 'Lt');
+  await page.selectOption('#opRank', 'Lieutenant');
   await page.fill('#missionName', 'Kestrel Relief');
   await page.selectOption('#missionType', 'Frontline');
   await page.selectOption('#setupShip', 'takanami');
 
   await openTab(page, 'log');
   const summary = page.locator('#logSummary');
-  await expect(summary).toContainText('Lt Fin');
+  await expect(summary).toContainText('Lieutenant Fin');
   await expect(summary).toContainText('Kestrel Relief');
   await expect(summary).toContainText('Frontline');
   await expect(summary).toContainText('UCS Takanami');
@@ -186,7 +186,7 @@ test.describe('new mission', () => {
   /** A mission with details, non-default settings and a log. */
   async function seed(page) {
     await page.fill('#opName', 'Fin');
-    await page.fill('#opRank', 'Lt');
+    await page.selectOption('#opRank', 'Lieutenant');
     await page.fill('#missionName', 'Kestrel Relief');
     await page.selectOption('#missionType', 'Frontline');
     await page.selectOption('#setupShip', 'takanami');
@@ -210,7 +210,7 @@ test.describe('new mission', () => {
     await page.click('#newMissionBtn');
 
     await expect(page.locator('#opName')).toHaveValue('Fin');
-    await expect(page.locator('#opRank')).toHaveValue('Lt');
+    await expect(page.locator('#opRank')).toHaveValue('Lieutenant');
     await expect(page.locator('#setupShip')).toHaveValue('takanami');
     await expect(page.locator('#modPower')).not.toBeChecked();
   });
@@ -244,7 +244,7 @@ test.describe('new mission', () => {
     await page.click('#newMissionBtn');
 
     await openTab(page, 'log');
-    await expect(page.locator('#logSummary')).toContainText('Lt Fin');
+    await expect(page.locator('#logSummary')).toContainText('Lieutenant Fin');
     await expect(page.locator('#logSummary')).not.toContainText('Kestrel Relief');
   });
 

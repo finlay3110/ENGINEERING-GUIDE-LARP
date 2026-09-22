@@ -111,7 +111,7 @@ test.describe('persistence', () => {
 
   test('the derived type reaches the Action Log summary and JSON export', async ({ page }) => {
     await page.fill('#opName', 'Fin');
-    await page.fill('#opRank', 'Lt');
+    await page.selectOption('#opRank', 'Lieutenant');
     await page.fill('#missionName', 'OPERATION CLAYMORE');
     await openTab(page, 'log');
 

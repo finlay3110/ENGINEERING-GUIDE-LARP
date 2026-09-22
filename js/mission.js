@@ -646,6 +646,17 @@ function setMissionType(value) {
   missionType.value = value;
 }
 
+/** Same reasoning as setMissionType: Rank moved from free text to a fixed
+ *  list, and a select silently blanks any value it has no option for. A rank
+ *  saved under the old free-text field is kept as an extra option rather than
+ *  disappearing the next time Setup is opened. */
+function setOpRank(value) {
+  if (value && ![...opRank.options].some(o => o.value === value)) {
+    opRank.add(new Option(`${value} (not a current rank)`, value));
+  }
+  opRank.value = value;
+}
+
 /**
  * Recognise a canon operation name in Mission Name and surface its type.
  *
@@ -689,7 +700,7 @@ operationHintApply.addEventListener('click', () => {
 
 function fillSetupForm() {
   opName.value = state.operator.name;
-  opRank.value = state.operator.rank;
+  setOpRank(state.operator.rank);
   missionName.value = state.mission.name;
   setMissionType(state.mission.type);
   missionStart.value = state.mission.startedAt ? toLocalInput(state.mission.startedAt) : '';
