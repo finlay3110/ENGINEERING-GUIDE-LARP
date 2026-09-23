@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openTab } from './helpers.mjs';
+import { openTab, pickRank } from './helpers.mjs';
 
 // A representative sample across all four types present in the canon list,
 // not the full 32 - the exhaustive count is asserted separately below.
@@ -111,7 +111,7 @@ test.describe('persistence', () => {
 
   test('the derived type reaches the Action Log summary and JSON export', async ({ page }) => {
     await page.fill('#opName', 'Fin');
-    await page.selectOption('#opRank', 'Lieutenant');
+    await pickRank(page, 'Lieutenant');
     await page.fill('#missionName', 'OPERATION CLAYMORE');
     await openTab(page, 'log');
 

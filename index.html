@@ -98,21 +98,14 @@
           </div>
           <div class="field">
             <label for="opRank">Rank</label>
-            <select id="opRank" name="opRank">
-              <option value="">Not set</option>
-              <option value="Cadet">Cadet</option>
-              <option value="Ensign">Ensign</option>
-              <option value="Sub Lt">Sub Lt</option>
-              <option value="Lieutenant">Lieutenant</option>
-              <option value="Lt Cmdr">Lt Cmdr</option>
-              <option value="Commander">Commander</option>
-              <option value="Captain">Captain</option>
-              <option value="Commodore">Commodore</option>
-              <option value="Rear Admiral">Rear Admiral</option>
-              <option value="Vice Admiral">Vice Admiral</option>
-              <option value="Admiral">Admiral</option>
-              <option value="Admiral of the Fleet">Admiral of the Fleet</option>
-            </select>
+            <!-- A searchable dropdown rather than a plain <select>: clicking in
+                 shows the full list, typing filters it down, but (unlike Mission
+                 Name) what ends up in the field is still locked to that list -
+                 see the rank combobox logic in mission.js. -->
+            <div class="combobox" id="opRankBox">
+              <input type="text" id="opRank" name="opRank" role="combobox" aria-expanded="false" aria-controls="opRankListbox" aria-autocomplete="list" autocomplete="off" placeholder="e.g. Commander">
+              <ul class="combobox-list" id="opRankListbox" role="listbox" aria-label="Rank" hidden></ul>
+            </div>
           </div>
           <div class="field">
             <label for="missionStart">Date and time</label>

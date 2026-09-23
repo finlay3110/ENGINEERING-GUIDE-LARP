@@ -506,6 +506,33 @@ html,body{
 .field-row{display:flex; gap:8px; align-items:center;}
 .field-row input{flex:1; min-width:0;}
 
+.combobox{position:relative;}
+.combobox-list{
+  position:absolute;
+  top:calc(100% + 4px);
+  left:0;
+  right:0;
+  z-index:20;
+  max-height:220px;
+  overflow-y:auto;
+  margin:0;
+  padding:4px;
+  list-style:none;
+  background:var(--console);
+  border:1.4px solid var(--line);
+  border-radius:7px;
+  box-shadow:0 10px 28px rgba(0,0,0,.45);
+}
+.combobox-option{
+  padding:8px 10px;
+  border-radius:5px;
+  font-size:13.5px;
+  color:var(--text);
+  cursor:pointer;
+}
+.combobox-option.is-active{background:rgba(79,168,201,0.16); color:var(--cyan);}
+.combobox-empty{padding:8px 10px; font-size:12.5px; color:var(--muted);}
+
 .op-hint{
   display:flex;
   align-items:center;

@@ -45,6 +45,16 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+// ------------------------------------------------------------------ ranks --
+
+// Fixed and in seniority order - Rank is a locked list, not free text, so
+// this is the one and only source of what counts as a valid rank.
+const RANKS = [
+  'Cadet', 'Ensign', 'Sub Lt', 'Lieutenant', 'Lt Cmdr', 'Commander',
+  'Captain', 'Commodore', 'Rear Admiral', 'Vice Admiral', 'Admiral',
+  'Admiral of the Fleet',
+];
+
 // ------------------------------------------------------- canon operations --
 
 // Named missions with a known type, the way a player would recognise
@@ -259,6 +269,7 @@ const $ = id => document.getElementById(id);
 const setupForm = $('setupForm');
 const opName = $('opName');
 const opRank = $('opRank');
+const opRankList = $('opRankListbox');
 const missionStart = $('missionStart');
 const missionName = $('missionName');
 const operationNamesList = $('operationNames');
@@ -646,16 +657,106 @@ function setMissionType(value) {
   missionType.value = value;
 }
 
-/** Same reasoning as setMissionType: Rank moved from free text to a fixed
- *  list, and a select silently blanks any value it has no option for. A rank
- *  saved under the old free-text field is kept as an extra option rather than
- *  disappearing the next time Setup is opened. */
-function setOpRank(value) {
-  if (value && ![...opRank.options].some(o => o.value === value)) {
-    opRank.add(new Option(`${value} (not a current rank)`, value));
-  }
-  opRank.value = value;
+// -------------------------------------------------------- rank combobox ----
+//
+// Rank is a locked list, not free text (unlike Mission Name), so this is a
+// small combobox rather than a datalist: focusing the field shows every
+// rank, typing filters that list, but whatever is left in the field on blur
+// is always snapped back to a real rank - either the one just typed, if it
+// matches, or the last known-good value otherwise. A rank saved under the
+// old free-text field (or from a list that has since moved on) is kept as
+// that known-good value rather than being blanked, the same reasoning
+// setMissionType uses for mission type.
+
+let rankCommitted = '';
+
+function matchingRanks(query) {
+  const q = query.trim().toLowerCase();
+  return q ? RANKS.filter(r => r.toLowerCase().includes(q)) : RANKS;
 }
+
+function renderRankOptions(query) {
+  const matches = matchingRanks(query);
+  opRankList.innerHTML = matches.length
+    ? matches.map((r, i) =>
+        `<li role="option" class="combobox-option${i === 0 ? ' is-active' : ''}" id="rankOpt-${i}" data-value="${esc(r)}">${esc(r)}</li>`
+      ).join('')
+    : '<li class="combobox-empty">No matching rank</li>';
+  opRank.setAttribute('aria-activedescendant', matches.length ? 'rankOpt-0' : '');
+}
+
+function openRankList(query) {
+  renderRankOptions(query);
+  opRankList.hidden = false;
+  opRank.setAttribute('aria-expanded', 'true');
+}
+
+function closeRankList() {
+  opRankList.hidden = true;
+  opRank.setAttribute('aria-expanded', 'false');
+  opRank.removeAttribute('aria-activedescendant');
+}
+
+function moveRankActive(delta) {
+  const options = [...opRankList.querySelectorAll('.combobox-option')];
+  if (!options.length) return;
+  const from = options.findIndex(o => o.classList.contains('is-active'));
+  const next = (from + delta + options.length) % options.length;
+  options.forEach((o, i) => o.classList.toggle('is-active', i === next));
+  opRank.setAttribute('aria-activedescendant', options[next].id);
+  options[next].scrollIntoView({ block: 'nearest' });
+}
+
+/** Puts a rank in the field and treats it as the known-good value: what a
+ *  bad blur reverts back to, until the next commit. */
+function commitRank(value) {
+  opRank.value = value;
+  rankCommitted = value;
+  closeRankList();
+  readSetupForm();
+}
+
+opRank.addEventListener('focus', () => openRankList(''));
+opRank.addEventListener('input', () => openRankList(opRank.value));
+
+opRank.addEventListener('keydown', e => {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (opRankList.hidden) openRankList(opRank.value); else moveRankActive(1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (opRankList.hidden) openRankList(opRank.value); else moveRankActive(-1);
+  } else if (e.key === 'Enter') {
+    if (!opRankList.hidden) {
+      const active = opRankList.querySelector('.combobox-option.is-active');
+      if (active) { e.preventDefault(); commitRank(active.dataset.value); }
+    }
+  } else if (e.key === 'Escape') {
+    if (!opRankList.hidden) {
+      e.preventDefault();
+      closeRankList();
+      opRank.value = rankCommitted;
+      readSetupForm();
+    }
+  }
+});
+
+// mousedown, not click: fires before the field's blur, so preventDefault
+// here keeps focus in the field instead of a blur racing this commit.
+opRankList.addEventListener('mousedown', e => {
+  e.preventDefault();
+  const li = e.target.closest('.combobox-option');
+  if (li) commitRank(li.dataset.value);
+});
+
+opRank.addEventListener('blur', () => {
+  const typed = opRank.value.trim();
+  const canonical = RANKS.find(r => r.toLowerCase() === typed.toLowerCase());
+  opRank.value = canonical || (typed ? rankCommitted : '');
+  rankCommitted = opRank.value;
+  closeRankList();
+  readSetupForm();
+});
 
 /**
  * Recognise a canon operation name in Mission Name and surface its type.
@@ -700,7 +801,8 @@ operationHintApply.addEventListener('click', () => {
 
 function fillSetupForm() {
   opName.value = state.operator.name;
-  setOpRank(state.operator.rank);
+  opRank.value = state.operator.rank;
+  rankCommitted = state.operator.rank;
   missionName.value = state.mission.name;
   setMissionType(state.mission.type);
   missionStart.value = state.mission.startedAt ? toLocalInput(state.mission.startedAt) : '';
