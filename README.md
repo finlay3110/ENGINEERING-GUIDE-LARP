@@ -7,8 +7,10 @@ This is a fan-made project and is not approved by or affiliated with Bridge Comm
 ## Features
 
 - **Setup** — name, rank, date and time, mission name, mission type and ship,
-  plus a checkbox per section. Rank is a fixed dropdown, Cadet through Admiral
-  of the Fleet. Mission name offers known canon operations as
+  plus a checkbox per section. Rank is a searchable dropdown, Cadet through
+  Admiral of the Fleet — click in to see the full list or type to filter it,
+  but (unlike Mission Name) what ends up in the field is always one of the
+  twelve. Mission name offers known canon operations as
   you type (still ordinary free text otherwise) and recognising one fills in
   its mission type automatically — never overwriting a type you have already
   set, and always offering a one-tap "Use X" if the two disagree. Power

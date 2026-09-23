@@ -9,7 +9,7 @@
 // Bump CACHE when any precached file changes; the old cache is deleted on
 // activate.
 // ============================================================================
-const CACHE = 'ucn-eng-v4';
+const CACHE = 'ucn-eng-v5';
 
 const PRECACHE = [
   './',

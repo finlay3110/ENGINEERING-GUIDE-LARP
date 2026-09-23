@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
-import { openTab } from './helpers.mjs';
+import { openTab, pickRank } from './helpers.mjs';
 
 /** A mission with one completed repair, one still running, and a note. */
 async function seedMission(page) {
   await page.goto('/index.html');
   await page.fill('#opName', 'Fin');
-  await page.selectOption('#opRank', 'Lieutenant');
+  await pickRank(page, 'Lieutenant');
   await page.fill('#missionName', 'Kestrel Relief');
   await page.selectOption('#missionType', 'Frontline');
   await page.click('#nowBtn');

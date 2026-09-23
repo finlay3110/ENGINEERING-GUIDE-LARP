@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { openTab, tabHidden, availableTabs } from './helpers.mjs';
+import { openTab, tabHidden, availableTabs, pickRank } from './helpers.mjs';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/index.html');
@@ -15,7 +15,7 @@ test('setup is the first tab and opens by default', async ({ page }) => {
 
 test('mission details reach the log summary', async ({ page }) => {
   await page.fill('#opName', 'Fin');
-  await page.selectOption('#opRank', 'Lieutenant');
+  await pickRank(page, 'Lieutenant');
   await page.fill('#missionName', 'Kestrel Relief');
   await page.selectOption('#missionType', 'Frontline');
   await page.selectOption('#setupShip', 'takanami');
@@ -186,7 +186,7 @@ test.describe('new mission', () => {
   /** A mission with details, non-default settings and a log. */
   async function seed(page) {
     await page.fill('#opName', 'Fin');
-    await page.selectOption('#opRank', 'Lieutenant');
+    await pickRank(page, 'Lieutenant');
     await page.fill('#missionName', 'Kestrel Relief');
     await page.selectOption('#missionType', 'Frontline');
     await page.selectOption('#setupShip', 'takanami');

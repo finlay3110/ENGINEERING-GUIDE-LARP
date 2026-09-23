@@ -37,6 +37,17 @@ export async function availableTabs(page) {
   ]);
 }
 
+/**
+ * Pick a rank through the Setup rank combobox, the way a real user would:
+ * focus the field (which opens the full list) and click the option with
+ * that exact text. Exact match matters - several ranks share a substring
+ * ("Admiral" is inside four of the twelve entries).
+ */
+export async function pickRank(page, rank) {
+  await page.click('#opRank');
+  await page.getByRole('option', { name: rank, exact: true }).click();
+}
+
 /** Relative luminance per WCAG 2.x. */
 function luminance([r, g, b]) {
   const f = c => {
